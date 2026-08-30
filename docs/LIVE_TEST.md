@@ -27,9 +27,20 @@ was captured under Solitude, Hackerman, and Solitude again. Vines followed the
 resolved gray and green window-border palettes immediately, and the restored
 Solitude frame matched the first capture.
 
-![Theme inheritance under Solitude, Hackerman, and restored Solitude](native-theme-test.png)
-
 ![OmaFrames Vines rendered around a controlled Foot window](native-foot-test.png)
+
+The natural-leaf prototype was then tested as version `0.4.0-prototype`.
+Heart-shaped leaves are rasterized from in-memory Cairo curves at three tilt
+angles for each edge. Two 720×480 Foot windows received visibly different,
+stable counts and positions. A 15000 ms run confirmed that the randomized
+leaves and their small individual delays still remain behind the clockwise stem
+reveal.
+
+The texture palette was exercised through Retro 82 → Hackerman → Retro 82.
+Leaves, veins, stem, and buds changed from orange to green and back without a
+plugin reload, layout shift, config error, or compositor error.
+
+![Theme-aware natural leaves under Retro 82, Hackerman, and restored Retro 82](native-theme-test.png)
 
 ## Passed
 
@@ -45,11 +56,14 @@ Solitude frame matched the first capture.
 | Attachment to a Foot window opened after load | Pass |
 | Runtime option registration | Pass |
 | Stem, leaves, and buds visible in the compositor | Pass |
+| Heart-shaped leaf silhouette and visible tilt variants | Pass |
+| Variable stable layout across same-sized Foot windows | Pass |
 | Per-window clockwise stem growth | Pass |
-| Leaves and buds staged behind stem progress | Pass |
+| Randomized leaves and buds staged behind stem progress | Pass |
 | Standard Hyprland border retained | Pass |
 | Runtime animation disable | Pass |
 | Live Solitude → Hackerman → Solitude inheritance | Pass |
+| Live Retro 82 → Hackerman → Retro 82 texture regeneration | Pass |
 | HiDPI scaling | Pass |
 | Tiled to floating transition | Pass |
 | Floating move and resize to 640×480 | Pass |
@@ -74,8 +88,9 @@ loaded and no longer reported it after unload.
 The expanded state test moved a floating Foot window, resized it to 640×480,
 toggled maximized and true fullscreen states, moved it from workspace 1 to 3
 and back, then disabled and re-enabled rendering through `hl.config`. Runtime
-geometry was increased from the defaults `(3, 16, 13)` to `(6, 24, 20)` for
-stem thickness, extent, and leaf size; the decoration repositioned cleanly.
+geometry was increased from the then-current defaults `(3, 16, 13)` to
+`(6, 24, 20)` for stem thickness, extent, and leaf size; the decoration
+repositioned cleanly. The natural-leaf prototype now defaults to `(3, 18, 16)`.
 
 Five Foot windows were then decorated simultaneously. Every client reported
 the Vines decoration, and closing four clients sequentially produced clean
@@ -84,10 +99,13 @@ screen edge, so no vines remain visible and no corruption appears.
 
 ## Findings
 
-- Fixed leaf counts look crowded on very small tiled windows.
 - Adjacent decorated edges can become visually busy where tiled windows meet.
-- A production renderer should reduce detail below a size threshold and offer
-  an active-window-only mode.
+- The procedural count is capped per edge, but a production renderer should
+  still reduce detail below a size threshold and offer an active-window-only
+  mode.
+- Each decorated window currently owns twelve 96×96 leaf textures. The cache is
+  small in practice, but many-window GPU memory and transition churn still need
+  formal profiling.
 - Runtime controls must use Hyprland's Lua `hl.config(...)` API; the legacy
   `hyprctl keyword` path is unavailable with the Lua config provider.
 - A full-border render call cannot be progressively clipped in this path;
@@ -102,6 +120,6 @@ screen edge, so no vines remain visible and no corruption appears.
   preference (the pack-level animation toggle works);
 - compositor upgrades and HyprPM compatibility pins.
 
-The plugin was unloaded after testing, all disposable Foot windows and
-transient rules were removed, the theme was restored to Solitude, and no
-persistent Hyprland or Omarchy configuration file was changed.
+The plugin was unloaded after testing, all disposable Foot windows were
+removed, the theme was restored to the user's starting theme, and no persistent
+Hyprland or Omarchy configuration file was edited manually.

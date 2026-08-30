@@ -50,16 +50,24 @@ Native decorations handle the compositor mechanics:
 - damage the correct area when geometry changes;
 - avoid a separate overlay surface for every client.
 
-The Vines renderer currently draws a segmented perimeter stem, simple leaf
-pills, and buds. Each decoration owns a monotonic growth clock. A compositor tick
-damages only the decoration while active; the stem advances clockwise around
-four perimeter segments and each leaf or bud sprouts after the stem reaches its
+The Vines renderer draws a segmented perimeter stem, heart-shaped leaves, and
+buds. Leaves are authored as Cairo vector curves, rasterized into small
+in-memory textures, and cached in twelve edge/tilt combinations. Each
+decoration owns a stable procedural layout seed, so leaf counts, spacing,
+rotation, and short sprout delays vary between windows without changing every
+frame.
+
+Each decoration also owns a monotonic growth clock. A compositor tick damages
+only the decoration while active; the stem advances clockwise around four
+perimeter segments and each leaf or bud sprouts after the stem reaches its
 position. Hyprland's standard border is never replaced.
 
 Theme-aware mode reads the window's already-resolved `m_realBorderColor`
 gradient during rendering. That means active/inactive transitions, window-rule
 colors, and Omarchy theme reloads reach the pack through Hyprland itself. Pack
 colors remain available as explicit overrides when theme-aware mode is off.
+Texture cache keys quantize those resolved colors to avoid rebuilding all tilt
+variants for imperceptible steps in a live border-color transition.
 
 Hyprland's plugin ABI is unstable. The `.so` must be rebuilt for the exact
 installed Hyprland version. Distribution will need HyprPM commit pins for each
@@ -85,10 +93,9 @@ The likely production split is:
 - **P1 — underway:** core geometry/state cases and five simultaneous windows
   pass. Remaining work includes active-window rules, size-aware detail,
   mixed-monitor scaling, and a longer damage/performance soak.
-- **P2 — underway:** staged native growth, sprouting, motion disablement, and
-  live theme inheritance pass. Replace the pills and straight perimeter
-  segments with organic curves, add restrained idle motion, and profile GPU and
-  damage cost.
+- **P2 — underway:** staged native growth, procedural heart-shaped foliage,
+  per-window layout variation, motion disablement, and live theme inheritance
+  pass. Organic stems, restrained idle motion, and GPU/damage profiling remain.
 - **P3:** add a second pack to validate the interface, then build the
   Quickshell settings/preview companion and an IPC spike.
 - **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions,

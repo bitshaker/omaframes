@@ -12,13 +12,14 @@ SOURCES = src/main.cpp src/packs/vines/VinePack.cpp src/packs/vines/VineDecorati
 HEADERS = src/globals.hpp src/packs/vines/VinePack.hpp src/packs/vines/VineDecoration.hpp src/packs/vines/VinePassElement.hpp
 TARGET = omaframes-native.so
 HYPRLAND_CFLAGS = $(shell pkg-config --cflags pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon)
+HYPRLAND_LIBS = $(shell pkg-config --libs pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon)
 
 .PHONY: all clean
 
 all: $(TARGET)
 
 $(TARGET): $(SOURCES) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(EXTRA_FLAGS) $(HYPRLAND_CFLAGS) $(SOURCES) -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(EXTRA_FLAGS) $(HYPRLAND_CFLAGS) $(SOURCES) $(HYPRLAND_LIBS) -o $@
 
 clean:
 	$(RM) $(TARGET)

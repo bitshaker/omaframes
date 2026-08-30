@@ -25,9 +25,9 @@ void registerConfig() {
         "plugin:omaframes:vines:growth_duration_ms", "Initial growth duration in milliseconds", 1800, Config::Values::SIntValueOptions{.min = 100, .max = 15000});
     packConfig.stemThickness = makeShared<Config::Values::CIntValue>(
         "plugin:omaframes:vines:stem_thickness", "Stem thickness in logical pixels", 3, Config::Values::SIntValueOptions{.min = 1, .max = 12});
-    packConfig.extent = makeShared<Config::Values::CIntValue>("plugin:omaframes:vines:extent", "Space around the window used by the vines", 16,
+    packConfig.extent = makeShared<Config::Values::CIntValue>("plugin:omaframes:vines:extent", "Space around the window used by the vines", 18,
                                                               Config::Values::SIntValueOptions{.min = 4, .max = 40});
-    packConfig.leafSize = makeShared<Config::Values::CIntValue>("plugin:omaframes:vines:leaf_size", "Leaf length", 13,
+    packConfig.leafSize = makeShared<Config::Values::CIntValue>("plugin:omaframes:vines:leaf_size", "Leaf length", 16,
                                                                 Config::Values::SIntValueOptions{.min = 4, .max = 30});
     packConfig.stemColor = makeShared<Config::Values::CColorValue>("plugin:omaframes:vines:col.stem", "Stem color", 0xff43945a);
     packConfig.leafColor = makeShared<Config::Values::CColorValue>("plugin:omaframes:vines:col.leaf", "Leaf color", 0xff68c66b);

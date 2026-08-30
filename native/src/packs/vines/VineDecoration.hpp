@@ -3,10 +3,13 @@
 // Native decoration supplied by the OmaFrames Vines pack.
 #define WLR_USE_UNSTABLE
 
+#include <array>
 #include <chrono>
+#include <cstdint>
 
 #include <hyprland/src/helpers/signal/Signal.hpp>
 #include <hyprland/src/render/decorations/IHyprWindowDecoration.hpp>
+#include <hyprland/src/render/Texture.hpp>
 
 namespace OmaFrames::Packs::Vines {
 class CVineDecoration : public IHyprWindowDecoration {
@@ -36,6 +39,9 @@ class CVineDecoration : public IHyprWindowDecoration {
     Vector2D                              m_lastWindowPosition;
     Vector2D                              m_lastWindowSize;
     double                                m_lastExtent = 0;
+    std::array<SP<Render::ITexture>, 12>  m_leafTextures;
+    uint64_t                              m_leafTextureKey = UINT64_MAX;
+    uint64_t                              m_layoutSeed      = 0;
     std::chrono::steady_clock::time_point m_growthStartedAt;
     CHyprSignalListener                   m_tickListener;
 

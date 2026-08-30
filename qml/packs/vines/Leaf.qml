@@ -29,7 +29,7 @@ Item {
             joinStyle: ShapePath.RoundJoin
 
             PathSvg {
-                path: "M 1 12 C 7 1, 23 -2, 33 9 C 27 22, 10 27, 1 12 Z"
+                path: "M 1 12 C 6 10, 5 5, 11 3 C 17 0, 24 5, 33 11 C 27 18, 19 23, 12 21 C 6 19, 7 14, 1 12 Z"
             }
         }
 
@@ -40,7 +40,7 @@ Item {
             capStyle: ShapePath.RoundCap
 
             PathSvg {
-                path: "M 3 12 C 12 11, 21 10, 30 8"
+                path: "M 3 12 C 12 12, 21 12, 30 11 M 12 12 L 8 6 M 19 12 L 16 5 M 12 12 L 8 18 M 19 12 L 16 20"
             }
         }
     }

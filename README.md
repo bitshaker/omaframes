@@ -27,8 +27,9 @@ has been compiled and live-tested against Hyprland 0.56.2. Existing and newly
 opened windows, HiDPI rendering, floating move/resize, maximize/fullscreen,
 workspace movement, live settings, five concurrent Foot windows, repeated
 load/unload, and clean decoration removal have passed. Native clockwise growth,
-staged sprouts, motion disablement, and live Solitude ↔ Hackerman theme changes
-also pass. Mixed-monitor and long-running performance tests remain.
+staged sprouts, motion disablement, per-window procedural leaf layouts, and live
+Retro 82 ↔ Hackerman theme changes also pass. Mixed-monitor and long-running
+performance tests remain.
 
 ## Effect packs
 
@@ -83,11 +84,16 @@ Vines grows clockwise once when it attaches to a window. Hyprland's normal
 border stays in place while the effect renders outside it. By default, the
 stem, leaves, and buds derive from each window's resolved border gradient, so
 active/inactive state, window rules, and Omarchy theme changes flow through
-without parsing theme files.
+without parsing theme files. Heart-shaped leaves are generated from vector
+curves in memory, then placed at stable pseudo-random intervals with three tilt
+variants. Windows of the same size therefore do not receive identical foliage,
+but a window's layout does not jitter from frame to frame.
 
 ![Native OmaFrames Vines decoration around a Foot test window](docs/native-foot-test.png)
 
 ![Native Vines growth: beginning, midpoint, and complete](docs/native-growth-test.png)
+
+![Native theme inheritance: Retro 82, Hackerman, and restored Retro 82](docs/native-theme-test.png)
 
 The compositor test matrix is documented in
 [the live-test report](docs/LIVE_TEST.md).
@@ -132,7 +138,8 @@ hyprctl eval 'hl.config({ plugin = { omaframes = { vines = { animation_enabled =
 
 `theme_aware` defaults to `true`. Set it to `false` to use the explicit
 `col.stem`, `col.leaf`, and `col.bud` values instead. `growth_duration_ms`
-defaults to 1800 and accepts 100–15000 milliseconds.
+defaults to 1800 and accepts 100–15000 milliseconds. The default extent is 18
+logical pixels and the default leaf length is 16 logical pixels.
 
 ## Verification
 
