@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "bitshaker.omaframes",
+  "name": "OmaFrames",
+  "version": "0.1.0",
+  "author": "Joe Homs",
+  "license": "MIT",
+  "description": "Load OmaFrames and toggle its living window-effect packs from the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "OmaFrames",
+    "description": "Load the native host and toggle Vines or OmaCritter.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "pluginPath": ""
+    },
+    "schema": [
+      {
+        "key": "pluginPath",
+        "type": "path",
+        "label": "Native plugin path",
+        "defaultValue": "",
+        "description": "Absolute path to omaframes-native.so. When empty, the development build next to this shell plugin is used."
+      }
+    ]
+  }
+}

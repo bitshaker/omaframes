@@ -20,6 +20,11 @@ geometry, plus a Quickshell/QML companion for previews, palettes, controls, and
 reduced-motion settings. See [the architecture notes](docs/ARCHITECTURE.md) and
 [the effect-pack contract](docs/PACKS.md).
 
+The first companion surface now lives in `shell/`: an Omarchy bar widget with
+a small sprout icon, a native-host load switch, and live Vines and OmaCritter
+toggles. Its `pluginPath` setting points at the native `.so`; while developing
+from this checkout it automatically uses `native/omaframes-native.so`.
+
 ## Status
 
 Prototype only. The QML study has been linted and rendered. The native plugin
@@ -89,6 +94,22 @@ make -C native
 
 The output is `native/omaframes-native.so`. It checks the running Hyprland hash
 during initialization and refuses to load against mismatched headers.
+
+## Omarchy bar widget
+
+The `shell/` directory is an Omarchy `bar-widget` plugin. For local development,
+link it into the user plugin directory, enable it, and optionally pin the build
+path explicitly:
+
+```bash
+ln -s "$PWD/shell" ~/.config/omarchy/plugins/bitshaker.omaframes
+omarchy plugin enable bitshaker.omaframes
+omarchy bar set bitshaker.omaframes pluginPath "$PWD/native/omaframes-native.so"
+```
+
+Left-click the sprout icon to open the pack panel. Right-click loads or unloads
+the native host, and middle-click refreshes its status. In the panel, Vines and
+OmaCritter can be toggled independently without reloading the host.
 
 Vines grows clockwise once when it attaches to a window. Hyprland's normal
 border stays in place while the effect renders outside it. By default, the

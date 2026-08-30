@@ -16,6 +16,25 @@ fi
     "$project_dir/qml/Main.qml" \
     "$project_dir/qml/Capture.qml"
 
+# `qs.*` modules are resolved by Quickshell's runtime loader rather than Qt's
+# standalone import scanner. Keep syntax/type checks for the local components
+# without flooding the check with false missing-import errors for Omarchy UI.
+"$qml_linter" \
+    --import disable \
+    --inheritance-cycle disable \
+    --unresolved-type disable \
+    --missing-type disable \
+    --unqualified disable \
+    --unused-imports disable \
+    --signal-handler-parameters disable \
+    "$project_dir/shell/OmaFramesIcon.qml" \
+    "$project_dir/shell/Service.qml" \
+    "$project_dir/shell/Panel.qml"
+
+if command -v omarchy >/dev/null 2>&1; then
+    omarchy plugin validate "$project_dir/shell"
+fi
+
 make -C "$project_dir/native" clean all
 
 for symbol in pluginAPIVersion pluginInit pluginExit; do
