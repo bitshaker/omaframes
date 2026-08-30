@@ -2,19 +2,19 @@
   "schemaVersion": 1,
   "id": "bitshaker.omaframes",
   "name": "OmaFrames",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "author": "Joe Homs",
   "license": "MIT",
-  "description": "Load OmaFrames and toggle its living window-effect packs from the Omarchy bar.",
+  "description": "Living, theme-aware Vines and a window-walking Chameleon for Hyprland, controlled from the Omarchy bar.",
   "kinds": [
     "bar-widget"
   ],
   "entryPoints": {
-    "barWidget": "Panel.qml"
+    "barWidget": "shell/Panel.qml"
   },
   "barWidget": {
     "displayName": "OmaFrames",
-    "description": "Load the native host and toggle Vines or Chameleon.",
+    "description": "Control the OmaFrames native host and toggle Vines or Chameleon.",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right",
@@ -25,9 +25,9 @@
       {
         "key": "pluginPath",
         "type": "path",
-        "label": "Native plugin path",
+        "label": "Development plugin path",
         "defaultValue": "",
-        "description": "Absolute path to omaframes-native.so. When empty, the development build next to this shell plugin is used."
+        "description": "Optional absolute path to omaframes-native.so. Leave empty to use the HyprPM-managed OmaFrames host."
       }
     ]
   }

@@ -30,25 +30,24 @@ Item {
   readonly property int activeCount: (loaded && vinesEnabled ? 1 : 0)
     + (loaded && critterEnabled ? 1 : 0)
   readonly property bool anyActive: activeCount > 0
-  readonly property bool pluginAvailable: pluginPath !== ""
+  readonly property bool managedByHyprpm: pluginPath === ""
+  readonly property bool pluginAvailable: managedByHyprpm || pluginPath.charAt(0) === "/"
 
   readonly property string pluginPath: {
     var configured = settings && settings.pluginPath !== undefined
       ? String(settings.pluginPath).trim()
       : ""
-    return configured !== "" ? configured : localPath(Qt.resolvedUrl("../native/omaframes-native.so"))
-  }
-
-  function localPath(url) {
-    var value = String(url || "")
-    if (value.indexOf("file://") === 0) value = value.substring(7)
-    try { return decodeURIComponent(value) } catch (e) { return value }
+    return configured
   }
 
   function friendlyError(raw, fallback) {
     var text = String(raw || "").replace(/\s+/g, " ").trim()
     if (text.indexOf("Couldn't set socket timeout") >= 0)
       return "Hyprland is not reachable from the shell."
+    var lower = text.toLowerCase()
+    if (lower.indexOf("omaframes") >= 0
+        && (lower.indexOf("not found") >= 0 || lower.indexOf("doesn't exist") >= 0))
+      return "The native host is not installed. Run: hyprpm add https://github.com/bitshaker/omaframes"
     return text || fallback
   }
 
@@ -120,7 +119,7 @@ Item {
 
   function toggleHost() {
     if (actionProc.running) return
-    if (pluginPath === "" || pluginPath.charAt(0) !== "/") {
+    if (!managedByHyprpm && pluginPath.charAt(0) !== "/") {
       lastError = "Set an absolute path to omaframes-native.so in the widget settings."
       return
     }
@@ -131,7 +130,9 @@ Item {
     _actionError = ""
     lastError = ""
     actionStatus = loaded ? "Unloading OmaFrames…" : "Loading OmaFrames…"
-    actionProc.command = ["hyprctl", "plugin", _pendingAction, pluginPath]
+    actionProc.command = managedByHyprpm
+      ? ["hyprpm", loaded ? "disable" : "enable", "omaframes"]
+      : ["hyprctl", "plugin", _pendingAction, pluginPath]
     actionProc.running = true
   }
 

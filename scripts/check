@@ -32,7 +32,17 @@ fi
     "$project_dir/shell/Panel.qml"
 
 if command -v omarchy >/dev/null 2>&1; then
-    omarchy plugin validate "$project_dir/shell"
+    omarchy plugin validate "$project_dir"
+fi
+
+test -f "$project_dir/hyprpm.toml"
+test -f "$project_dir/preview.png"
+
+manifest_version="$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)",*$/\1/p' "$project_dir/manifest.json")"
+native_version="$(sed -n 's/.*"\([0-9][0-9.]*\)"};$/\1/p' "$project_dir/native/src/main.cpp")"
+if [[ -z "$manifest_version" || "$manifest_version" != "$native_version" ]]; then
+    printf 'version mismatch: manifest=%s native=%s\n' "$manifest_version" "$native_version" >&2
+    exit 1
 fi
 
 make -C "$project_dir/native" clean all

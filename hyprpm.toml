@@ -1,0 +1,11 @@
+[repository]
+name = "omaframes"
+authors = ["Joe Homs"]
+
+[omaframes]
+description = "Living, theme-aware Vines and a window-walking Chameleon for Hyprland"
+authors = ["Joe Homs"]
+output = "native/omaframes-native.so"
+build = [
+    "make -C native clean all",
+]

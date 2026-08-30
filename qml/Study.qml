@@ -73,7 +73,7 @@ Rectangle {
         spacing: 5
 
         Text {
-            text: "OMAFRAMES / VINES + CHAMELEON / STUDY 02"
+            text: "OMAFRAMES / VINES + CHAMELEON"
             color: "#8ccf82"
             font.pixelSize: 13
             font.letterSpacing: 2.4
@@ -104,7 +104,7 @@ Rectangle {
         Text {
             id: badgeLabel
             anchors.centerIn: parent
-            text: "PROTOTYPE • NATIVE + VECTOR QML"
+            text: "HYPRLAND • OMARCHY • NATIVE + VECTOR QML"
             color: "#9fc79c"
             font.pixelSize: 11
             font.letterSpacing: 1.2

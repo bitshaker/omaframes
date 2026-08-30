@@ -95,8 +95,8 @@ while hidden and reduced-motion states disarm the timer. Only the previous and
 current actor bounds are damaged.
 
 Hyprland's plugin ABI is unstable. The `.so` must be rebuilt for the exact
-installed Hyprland version. Distribution will need HyprPM commit pins for each
-supported release.
+installed Hyprland version. Distribution uses HyprPM, with commit pins for each
+supported Hyprland release.
 
 ## Intended bridge
 
@@ -109,7 +109,8 @@ The likely production split is:
    animation controls, previews, and accessibility options.
 4. The companion sends a small settings model to the native host. A Unix socket
    or tiny command dispatcher are the leading transport options.
-5. Omarchy packaging installs and starts the host and companion as one plugin.
+5. HyprPM installs and builds the native host; Omarchy installs the companion
+   from the same public repository.
 
 ## Prototype roadmap
 
@@ -124,5 +125,6 @@ The likely production split is:
 - **P3 — underway:** Chameleon validates the second-pack registry, global
   actor lifecycle, and QML/native split. Complete compositor validation, the
   Quickshell settings companion, and an IPC spike remain.
-- **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions,
-  and compatibility CI.
+- **P4 — underway:** Omarchy and HyprPM packaging, release documentation, and
+  recovery instructions are in place. Expand Hyprland release pins and add
+  compatibility CI as support broadens.

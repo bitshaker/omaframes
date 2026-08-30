@@ -2,9 +2,9 @@
 
 Playful, extensible window decorations for Omarchy and Hyprland.
 
-![OmaFrames Vines and Chameleon QML visual study](docs/qml-preview.png)
+![OmaFrames Vines and Chameleon live compositor preview](preview.png)
 
-OmaFrames is becoming an effect engine rather than a single vine decoration.
+OmaFrames is an effect engine rather than a single vine decoration.
 The host owns Hyprland integration and effect lifecycle; individual packs own
 their visuals and settings. **Vines** frames each window; **Chameleon** adds one
 small, color-shifting chameleon that walks those edges and jumps between nearby
@@ -17,21 +17,59 @@ This repository currently contains:
 - a native Hyprland plugin that renders both packs against live window geometry
   inside the compositor.
 
-The intended product remains hybrid: native rendering for exact window
-geometry, plus a Quickshell/QML companion for previews, palettes, controls, and
-reduced-motion settings. See [the architecture notes](docs/ARCHITECTURE.md) and
+The product is hybrid: native rendering for exact window geometry, plus an
+Omarchy Quickshell bar widget for host and effect controls. See
+[the architecture notes](docs/ARCHITECTURE.md) and
 [the effect-pack contract](docs/PACKS.md).
 
-The first companion surface now lives in `shell/`: an Omarchy bar widget with
-a small sprout icon, a native-host load switch, and live Vines and Chameleon
-toggles. Its `pluginPath` setting points at the native `.so`; while developing
-from this checkout it automatically uses `native/omaframes-native.so`.
+The companion lives in `shell/`: an Omarchy bar widget with a small sprout icon,
+a HyprPM host switch, and live Vines and Chameleon toggles. An optional
+`pluginPath` setting can point at a development build instead.
 
-## Status
+## Install
 
-Prototype only. The QML study has been linted and rendered. The native plugin
-has been compiled and live-tested against Hyprland 0.56.2. Existing and newly
-opened windows, HiDPI rendering, floating move/resize, maximize/fullscreen,
+OmaFrames has two parts because Omarchy shell plugins are QML-only while the
+window effects run inside Hyprland. Install the ABI-matched native host with
+HyprPM, then install the bar widget through Omarchy:
+
+```bash
+hyprpm add https://github.com/bitshaker/omaframes
+hyprpm enable omaframes
+omarchy plugin add https://github.com/bitshaker/omaframes.git --enable
+```
+
+Left-click the sprout icon to open the pack panel. Right-click enables or
+disables the native host, and middle-click refreshes its status. Vines and
+Chameleon can be toggled independently without reloading the host.
+
+Update both managed checkouts with:
+
+```bash
+hyprpm update
+omarchy plugin update bitshaker.omaframes
+```
+
+Remove OmaFrames cleanly with:
+
+```bash
+hyprpm disable omaframes
+omarchy plugin remove bitshaker.omaframes
+hyprpm remove omaframes
+```
+
+No persistent Hyprland configuration is required. Removing the Omarchy plugin
+removes its bar entry; disabling and removing the HyprPM plugin unloads the
+native code and removes HyprPM's managed build.
+
+## Compatibility and status
+
+OmaFrames 0.5.0 is a public beta. The QML study has been linted and rendered.
+The native plugin has been compiled and live-tested against Hyprland 0.56.2 at
+commit `efb50993780079460b0cbed1363e2166a2de1d9f`. HyprPM builds against the
+running Hyprland version and uses release commit pins for supported versions;
+the plugin also refuses to load if its build headers do not match the running
+compositor. Existing and newly opened windows, HiDPI rendering, floating
+move/resize, maximize/fullscreen,
 workspace movement, live settings, five concurrent Foot windows, repeated
 load/unload, and clean decoration removal have passed. Native clockwise growth,
 staged sprouts, motion disablement, per-window procedural leaf layouts, and live
@@ -46,6 +84,17 @@ floating resize, empty-workspace and fullscreen recovery, reduced motion,
 runtime disable/re-enable, a 12-jump soak, and clean unload. Mixed-monitor and
 long-running performance tests remain. The separate AMD encoder incident is
 documented in [the incident report](docs/INCIDENT_2026-08-30.md).
+
+OmaFrames runs as unsandboxed native code inside Hyprland, and the bar widget
+invokes `hyprpm` and `hyprctl` with fixed argument arrays. Review the source
+before installing and save work before enabling a new compositor plugin.
+HyprPM builds the native host locally and may request the privileges needed to
+prepare matching Hyprland headers or system development packages. The Omarchy
+plugin installer only clones and validates the QML checkout; it does not run a
+build hook or use `sudo`.
+
+See [SECURITY.md](SECURITY.md) for the runtime boundary and vulnerability
+reporting guidance.
 
 ## Effect packs
 
@@ -70,13 +119,14 @@ Run the interactive study:
 ./scripts/run-qml-prototype
 ```
 
-Regenerate the deterministic preview image:
+Capture the deterministic QML study image:
 
 ```bash
 ./scripts/capture-qml-prototype
 ```
 
-The study is asset-free: its vines and chameleon are QML vector paths and
+The study capture is written to `captures/qml-study.png`. It is asset-free: its
+vines and chameleon are QML vector paths and
 primitives. It animates walking, crouching, a curved inter-window flight, and
 landing around two simulated windows.
 
@@ -97,21 +147,26 @@ make -C native
 The output is `native/omaframes-native.so`. It checks the running Hyprland hash
 during initialization and refuses to load against mismatched headers.
 
-## Omarchy bar widget
+The root [`hyprpm.toml`](hyprpm.toml) is the supported distribution path. A
+manual build is intended for development and testing.
 
-The `shell/` directory is an Omarchy `bar-widget` plugin. For local development,
-link it into the user plugin directory, enable it, and optionally pin the build
-path explicitly:
+## Omarchy bar widget development
+
+The repository root is the Omarchy `bar-widget` plugin; its manifest loads
+`shell/Panel.qml`. For local development, link the checkout into the user plugin
+directory, enable it, and point the widget at the local native build:
 
 ```bash
-ln -s "$PWD/shell" ~/.config/omarchy/plugins/bitshaker.omaframes
+ln -s "$PWD" ~/.config/omarchy/plugins/bitshaker.omaframes
 omarchy plugin enable bitshaker.omaframes
 omarchy bar set bitshaker.omaframes pluginPath "$PWD/native/omaframes-native.so"
 ```
 
-Left-click the sprout icon to open the pack panel. Right-click loads or unloads
-the native host, and middle-click refreshes its status. In the panel, Vines and
-Chameleon can be toggled independently without reloading the host.
+Clear `pluginPath` to return the widget to HyprPM management:
+
+```bash
+omarchy bar set bitshaker.omaframes pluginPath ""
+```
 
 Vines grows clockwise once when it attaches to a window. Hyprland's normal
 border stays in place while the effect renders outside it. By default, the
@@ -140,10 +195,10 @@ window and disarms its animation timer.
 The compositor test matrix is documented in
 [the live-test report](docs/LIVE_TEST.md).
 
-### Optional live test
+### Manual live test
 
-A native Hyprland plugin can crash the compositor while it is experimental.
-Save work first and have a TTY available:
+A native Hyprland plugin can crash the compositor. Save work first and have a
+TTY available:
 
 ```bash
 hyprctl plugin load "$PWD/native/omaframes-native.so"
@@ -215,10 +270,19 @@ monitor. The command is unregistered when the plugin unloads.
 
 ## Verification
 
-Run the QML linter and rebuild the native plugin in one command:
+Validate the root Omarchy package, lint both QML surfaces, verify release
+metadata and native exports, and rebuild the native plugin in one command:
 
 ```bash
 ./scripts/check
+```
+
+The marketplace [`preview.png`](preview.png) is resized directly from the live
+anonymous-Foot-and-panel capture under `docs/`; it contains no generated or
+redrawn content. Rebuild it with ImageMagick:
+
+```bash
+./scripts/build-preview
 ```
 
 ## License

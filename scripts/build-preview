@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if ! command -v magick >/dev/null 2>&1; then
+    printf 'ImageMagick is required to build preview.png\n' >&2
+    exit 1
+fi
+
+# Resize the live compositor capture of three anonymous Foot terminals, the
+# native effects, and the real OmaFrames panel. No content is generated,
+# redrawn, or composited into the image.
+magick "$project_dir/docs/native-panel-live-test.png" \
+    -resize '1600x1000!' "$project_dir/preview.png"
+
+printf '%s\n' "$project_dir/preview.png"

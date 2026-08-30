@@ -54,7 +54,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         pack.start();
 
     HyprlandAPI::addNotification(pluginHandle, "[omaframes] Vines and Chameleon loaded", CHyprColor{0.35, 0.85, 0.42, 1.0}, 3500);
-    return {"omaframes", "Extensible living window effects; includes Vines and Chameleon", "OmaFrames contributors", "0.5.0-prototype"};
+    return {"omaframes", "Extensible living window effects; includes Vines and Chameleon", "Joe Homs", "0.5.0"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {

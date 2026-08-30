@@ -82,6 +82,7 @@ Panel {
         vines: omaframes.vinesEnabled,
         critter: omaframes.critterEnabled,
         pluginPath: omaframes.pluginPath,
+        managedByHyprpm: omaframes.managedByHyprpm,
         error: omaframes.lastError
       })
     }
@@ -201,9 +202,9 @@ Panel {
         Toggle {
           width: parent.width
           label: "Native host"
-          description: omaframes.loaded
-            ? "Unload the compositor renderer"
-            : "Load the compositor renderer"
+          description: omaframes.managedByHyprpm
+            ? (omaframes.loaded ? "Disable the HyprPM compositor renderer" : "Enable the HyprPM compositor renderer")
+            : (omaframes.loaded ? "Unload the development renderer" : "Load the development renderer")
           checked: omaframes.loaded
           hasCursor: root.cursorActive && root.selectedIndex === 0
           enabled: !omaframes.busy && omaframes.pluginAvailable
@@ -251,7 +252,7 @@ Panel {
         Text {
           visible: !omaframes.loaded
           width: parent.width
-          text: "Load the native host to choose individual effects. Right-click the bar icon to load or unload it quickly."
+          text: "Enable the native host to choose individual effects. Install it first with HyprPM if needed; right-click the bar icon to enable or disable it quickly."
           color: root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption

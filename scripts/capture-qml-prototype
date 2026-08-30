@@ -2,7 +2,7 @@
 set -euo pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-mkdir -p "$project_dir/docs"
+mkdir -p "$project_dir/captures"
 
 qml_runner="$(command -v qmlscene6 || command -v qml6)"
 env -u QT_QPA_PLATFORMTHEME \
@@ -11,4 +11,4 @@ env -u QT_QPA_PLATFORMTHEME \
     QT_STYLE_OVERRIDE=Basic \
     "$qml_runner" "$project_dir/qml/Capture.qml"
 
-printf '%s\n' "$project_dir/docs/qml-preview.png"
+printf '%s\n' "$project_dir/captures/qml-study.png"

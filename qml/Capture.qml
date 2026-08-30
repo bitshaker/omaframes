@@ -4,7 +4,7 @@ Study {
     id: captureRoot
 
     automatedCapture: true
-    capturePath: Qt.resolvedUrl("../docs/qml-preview.png").toString().replace("file://", "")
+    capturePath: Qt.resolvedUrl("../captures/qml-study.png").toString().replace("file://", "")
     growthProgress: 0.93
 
     Timer {

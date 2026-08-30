@@ -301,3 +301,19 @@ no configuration errors.
 | Complete offline check | Pass |
 | Transient settings, windows, workspace, focus, and unload cleanup | Pass |
 | Hyprland config errors after cleanup | None |
+
+## Omarchy panel release capture
+
+Date: 2026-08-30
+
+The release preview was captured on a disposable workspace with three anonymous
+Foot terminals. It shows the real Omarchy bar, the open OmaFrames panel, both
+pack toggles active, theme-aware Vines on all live window edges, and the single
+Chameleon actor. No application window or generated mockup was composited into
+the image.
+
+![OmaFrames panel with Vines and Chameleon on three Foot terminals](native-panel-live-test.png)
+
+After capture, the panel was closed, the native plugin was unloaded, all three
+temporary Foot processes were removed, the original workspace was restored,
+and Hyprland reported no remaining loaded plugins.
