@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+mkdir -p "$project_dir/docs"
+
+qml_runner="$(command -v qmlscene6 || command -v qml6)"
+env -u QT_QPA_PLATFORMTHEME \
+    QT_QPA_PLATFORM=offscreen \
+    QT_QUICK_BACKEND=software \
+    QT_STYLE_OVERRIDE=Basic \
+    "$qml_runner" "$project_dir/qml/Capture.qml"
+
+printf '%s\n' "$project_dir/docs/qml-preview.png"

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+qml_linter="/usr/lib/qt6/bin/qmllint"
+
+if [[ ! -x "$qml_linter" ]]; then
+    qml_linter="$(command -v qmllint6 || command -v qmllint)"
+fi
+
+"$qml_linter" \
+    "$project_dir/qml/Leaf.qml" \
+    "$project_dir/qml/VineFrame.qml" \
+    "$project_dir/qml/Study.qml" \
+    "$project_dir/qml/Main.qml" \
+    "$project_dir/qml/Capture.qml"
+
+make -C "$project_dir/native" clean all

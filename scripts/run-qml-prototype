@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+qml_runner="$(command -v qmlscene6 || command -v qml6 || command -v qmlscene)"
+exec "$qml_runner" "$project_dir/qml/Main.qml" "$@"
