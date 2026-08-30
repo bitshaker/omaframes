@@ -1,6 +1,9 @@
 [repository]
 name = "omaframes"
 authors = ["Joe Homs"]
+commit_pins = [
+    ["efb50993780079460b0cbed1363e2166a2de1d9f", "0ce2d47d88c7d95e285d73444251c8c66c256460"], # Hyprland 0.56.2
+]
 
 [omaframes]
 description = "Living, theme-aware Vines and a window-walking Chameleon for Hyprland"
