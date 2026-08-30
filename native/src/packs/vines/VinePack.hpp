@@ -27,6 +27,7 @@ struct SConfig {
 
 SConfig& config();
 void     registerConfig();
+void     start();
 void     attach(PHLWINDOW window);
-void     unload();
+void     stop();
 }

@@ -3,6 +3,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
+import "packs/critter" as Critter
 import "packs/vines" as Vines
 
 Rectangle {
@@ -15,8 +17,18 @@ Rectangle {
     property real growthProgress: 0
     property int growthDuration: 6200
     property bool motionEnabled: true
+    property real critterProgress: automatedCapture ? 0.53 : 0
     property string capturePath: ""
     property bool automatedCapture: false
+
+    readonly property real jumpProgress: Math.max(0, Math.min(1, (critterProgress - 0.30) / 0.42))
+    readonly property bool critterFlying: critterProgress >= 0.30 && critterProgress < 0.72
+    readonly property point critterStart: Qt.point(sourceWindow.x + sourceWindow.width + 13,
+                                                   sourceWindow.y + 122)
+    readonly property point critterFinish: Qt.point(targetWindow.x + 105,
+                                                    targetWindow.y + targetWindow.height + 13)
+    readonly property point critterApex: Qt.point((critterStart.x + critterFinish.x) / 2,
+                                                  Math.min(critterStart.y, critterFinish.y) - 130)
 
     function regrow() {
         growthAnimation.stop()
@@ -61,7 +73,7 @@ Rectangle {
         spacing: 5
 
         Text {
-            text: "OMAFRAMES / VINES / STUDY 01"
+            text: "OMAFRAMES / VINES + OMACRITTER / STUDY 02"
             color: "#8ccf82"
             font.pixelSize: 13
             font.letterSpacing: 2.4
@@ -69,7 +81,7 @@ Rectangle {
         }
 
         Text {
-            text: "A living edge for Hyprland"
+            text: "A tiny living world on your window edges"
             color: "#edf3e7"
             font.pixelSize: 25
             font.weight: Font.Medium
@@ -92,7 +104,7 @@ Rectangle {
         Text {
             id: badgeLabel
             anchors.centerIn: parent
-            text: "PROTOTYPE • VECTOR QML"
+            text: "PROTOTYPE • NATIVE + VECTOR QML"
             color: "#9fc79c"
             font.pixelSize: 11
             font.letterSpacing: 1.2
@@ -112,21 +124,21 @@ Rectangle {
         Rectangle {
             id: windowShadow
 
-            anchors.centerIn: parent
-            width: Math.min(850, stage.width - 80)
-            height: Math.min(480, stage.height - 72)
-            x: 12
-            y: 19
+            x: sourceWindow.x + 12
+            y: sourceWindow.y + 16
+            width: sourceWindow.width
+            height: sourceWindow.height
             radius: 20
             color: "#99000000"
         }
 
         Rectangle {
-            id: sampleWindow
+            id: sourceWindow
 
-            anchors.centerIn: parent
-            width: windowShadow.width
-            height: windowShadow.height
+            x: 36
+            y: 158
+            width: Math.min(650, stage.width - 420)
+            height: 348
             radius: 17
             color: "#121b17"
             border.color: "#2a3a30"
@@ -218,7 +230,7 @@ Rectangle {
                     }
 
                     Rectangle {
-                        width: Math.min(560, sampleWindow.width - 150)
+                        width: Math.min(460, sourceWindow.width - 150)
                         height: 1
                         color: "#26352b"
                     }
@@ -237,12 +249,132 @@ Rectangle {
         Vines.VineFrame {
             id: vines
 
-            x: sampleWindow.x - 48
-            y: sampleWindow.y - 48
-            width: sampleWindow.width + 96
-            height: sampleWindow.height + 96
+            x: sourceWindow.x - 48
+            y: sourceWindow.y - 48
+            width: sourceWindow.width + 96
+            height: sourceWindow.height + 96
             progress: root.growthProgress
             motionEnabled: root.motionEnabled && !root.automatedCapture
+        }
+
+        Rectangle {
+            x: targetWindow.x + 10
+            y: targetWindow.y + 13
+            width: targetWindow.width
+            height: targetWindow.height
+            radius: 17
+            color: "#99000000"
+        }
+
+        Rectangle {
+            id: targetWindow
+
+            x: stage.width - width - 32
+            y: 34
+            width: 310
+            height: 214
+            radius: 15
+            color: "#151c19"
+            border.color: "#39503e"
+            border.width: 1
+            clip: true
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                height: 42
+                color: "#1b2720"
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "seedlings.todo"
+                    color: "#839287"
+                    font.family: "monospace"
+                    font.pixelSize: 11
+                }
+            }
+
+            Column {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.leftMargin: 24
+                anchors.topMargin: 68
+                spacing: 13
+
+                Repeater {
+                    model: ["find a sunny edge", "stretch", "make the leap"]
+
+                    Row {
+                        required property string modelData
+                        spacing: 10
+
+                        Rectangle {
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: "#78ad70"
+                        }
+
+                        Text {
+                            text: parent.modelData
+                            color: "#9aaca0"
+                            font.family: "monospace"
+                            font.pixelSize: 12
+                        }
+                    }
+                }
+            }
+        }
+
+        Shape {
+            visible: root.critterFlying
+            anchors.fill: parent
+            opacity: 0.22
+
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: "#9ed38c"
+                strokeWidth: 1
+                strokeStyle: ShapePath.DashLine
+                dashPattern: [4, 5]
+
+                PathMove { x: root.critterStart.x; y: root.critterStart.y }
+                PathQuad {
+                    x: root.critterFinish.x
+                    y: root.critterFinish.y
+                    controlX: root.critterApex.x
+                    controlY: root.critterApex.y
+                }
+            }
+        }
+
+        Critter.Critter {
+            id: critter
+
+            readonly property real flightX: Math.pow(1 - root.jumpProgress, 2) * root.critterStart.x
+                + 2 * (1 - root.jumpProgress) * root.jumpProgress * root.critterApex.x
+                + Math.pow(root.jumpProgress, 2) * root.critterFinish.x
+            readonly property real flightY: Math.pow(1 - root.jumpProgress, 2) * root.critterStart.y
+                + 2 * (1 - root.jumpProgress) * root.jumpProgress * root.critterApex.y
+                + Math.pow(root.jumpProgress, 2) * root.critterFinish.y
+
+            x: (root.critterFlying
+                ? flightX
+                : root.critterProgress < 0.30
+                    ? root.critterStart.x
+                    : root.critterFinish.x + Math.min(1, (root.critterProgress - 0.72) / 0.28) * 95) - width / 2
+            y: (root.critterFlying
+                ? flightY
+                : root.critterProgress < 0.30
+                    ? root.critterStart.y - 42 * (root.critterProgress / 0.30)
+                    : root.critterFinish.y) - height / 2
+            edge: root.critterProgress < 0.30 ? "right" : root.critterFlying ? "top" : "bottom"
+            pose: root.critterFlying ? "flight"
+                : root.critterProgress > 0.68 && root.critterProgress < 0.79 ? "land"
+                : root.critterProgress > 0.25 && root.critterProgress < 0.30 ? "crouch"
+                : Math.floor(root.critterProgress * 16) % 2 ? "walkA" : "walkB"
+            facingPositive: true
         }
     }
 
@@ -337,6 +469,18 @@ Rectangle {
         duration: root.growthDuration
         easing.type: Easing.InOutCubic
         running: !root.automatedCapture
+    }
+
+    SequentialAnimation on critterProgress {
+        running: root.motionEnabled && !root.automatedCapture
+        loops: Animation.Infinite
+
+        NumberAnimation { from: 0; to: 0.25; duration: 2100; easing.type: Easing.InOutSine }
+        NumberAnimation { from: 0.25; to: 0.30; duration: 420; easing.type: Easing.InCubic }
+        NumberAnimation { from: 0.30; to: 0.72; duration: 920; easing.type: Easing.InOutQuad }
+        NumberAnimation { from: 0.72; to: 0.79; duration: 360; easing.type: Easing.OutBack }
+        NumberAnimation { from: 0.79; to: 1; duration: 1900; easing.type: Easing.InOutSine }
+        PauseAnimation { duration: 900 }
     }
 
 }

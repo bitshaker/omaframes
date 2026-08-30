@@ -143,3 +143,27 @@ screen edge, so no vines remain visible and no corruption appears.
 The plugin was unloaded after testing, all disposable Foot windows were
 removed, the theme was restored to the user's starting theme, and no persistent
 Hyprland or Omarchy configuration file was edited manually.
+
+## OmaCritter partial live test
+
+Date: 2026-08-30
+
+OmaFrames `0.5.0-prototype` loaded against the same Hyprland 0.56.2 commit. The
+pack registry attached one `OmaFrames: Vines` decoration at priority 9980 and
+one `OmaFrames: OmaCritter` decoration at priority 9970 to the existing ChatGPT
+window and two Foot windows opened after load. No config errors appeared.
+
+Transient Lua configuration changed jump interval, walk speed, size, palette,
+and reduced-motion state. The critter parked when motion was disabled and
+resumed when re-enabled. A high-contrast 64-pixel diagnostic gecko rendered on
+a shared tiled edge; the normal product default remains 30 logical pixels.
+
+![OmaCritter rendered on a tiled window edge at 2× scale](native-critter-live-test.png)
+
+The test then attempted a full-screen recording. The AMD VCE encode ring timed
+out in `gpu-screen-recorder`, the ChatGPT GPU process dumped core, GPU recovery
+failed, and the graphical session could not be restored without rebooting. The
+journal timeline points to the video encoder as the initiating failure, but the
+plugin was loaded in-process and the remaining flight, fullscreen, recovery,
+and unload cases are still unverified. See the full
+[incident report](INCIDENT_2026-08-30.md).

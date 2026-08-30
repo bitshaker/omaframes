@@ -16,16 +16,21 @@ pack loading can wait until the pack API and compatibility story are mature.
 ## Effect packs
 
 An effect pack owns its renderer, settings, display name, and render-pass
-cleanup. `vines` is the first implementation. Both halves use a matching path:
+cleanup. `vines` and `critter` are the current implementations. Both halves use
+matching paths:
 
 ```text
 qml/packs/vines/
 native/src/packs/vines/
+qml/packs/critter/
+native/src/packs/critter/
 ```
 
-The native Vines entry point exposes a minimal lifecycle—register configuration,
-attach to a window, and unload. The QML directory exposes visual components for
-the preview study. See [PACKS.md](PACKS.md) for the current contract.
+Each native entry point exposes a minimal lifecycle—register configuration,
+start shared state, attach to a window, and stop. A compile-time registry lets
+the host apply that lifecycle without importing pack-specific code. The QML
+directories expose visual components for the preview study. See
+[PACKS.md](PACKS.md) for the current contract.
 
 ## QML companion
 
@@ -36,9 +41,10 @@ QML is a good fit for visual exploration and the eventual settings surface:
 - build pack previews and controls quickly;
 - provide accessibility options such as reduced motion.
 
-The current QML app is a standalone Vines study around a simulated window. It
+The current QML app is a standalone two-window Vines and OmaCritter study. It
 does not track a real Hyprland window. `ShapePath.trim` provides the growth
-reveal and currently requires Qt 6.10 or newer.
+reveal, while a deterministic behavior timeline covers the critter's walk,
+crouch, flight, and landing poses. Qt 6.10 or newer is required.
 
 ## Native Hyprland plugin
 
@@ -74,6 +80,20 @@ colors remain available as explicit overrides when theme-aware mode is off.
 Texture cache keys quantize those resolved colors to avoid rebuilding all tilt
 variants for imperceptible steps in a live border-color transition.
 
+OmaCritter differs from a normal per-window decoration because exactly one
+actor exists globally. Every window receives a lightweight decoration hook,
+but `CritterDirector` owns the selected host, target, state machine, monotonic
+clock, one event-loop timer, signal listeners, and shared textures. A perched
+actor is queued by its host decoration. During an inter-window jump, a global
+post-window pass lets it cross the gap without creating an input surface.
+
+The director filters hidden, undecorated, undersized, invisible-workspace, and
+true-fullscreen windows. Jumps stay on one workspace and monitor. Long-lived
+window references are weak, and topology changes abort or rehome invalid
+flights. Active motion ticks every 16 ms; idle phases use their next deadline,
+while hidden and reduced-motion states disarm the timer. Only the previous and
+current actor bounds are damaged.
+
 Hyprland's plugin ABI is unstable. The `.so` must be rebuilt for the exact
 installed Hyprland version. Distribution will need HyprPM commit pins for each
 supported release.
@@ -101,7 +121,8 @@ The likely production split is:
 - **P2 — underway:** staged native growth, procedural heart-shaped foliage,
   per-window layout variation, motion disablement, and live theme inheritance
   pass. Organic stems, restrained idle motion, and GPU/damage profiling remain.
-- **P3:** add a second pack to validate the interface, then build the
-  Quickshell settings/preview companion and an IPC spike.
+- **P3 — underway:** OmaCritter validates the second-pack registry, global
+  actor lifecycle, and QML/native split. Complete compositor validation, the
+  Quickshell settings companion, and an IPC spike remain.
 - **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions,
   and compatibility CI.

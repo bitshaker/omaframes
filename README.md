@@ -2,18 +2,18 @@
 
 Playful, extensible window decorations for Omarchy and Hyprland.
 
-![OmaFrames Vines QML visual study](docs/qml-preview.png)
+![OmaFrames Vines and OmaCritter QML visual study](docs/qml-preview.png)
 
 OmaFrames is becoming an effect engine rather than a single vine decoration.
 The host owns Hyprland integration and effect lifecycle; individual packs own
-their visuals and settings. **Vines** is the first pack and the working proof
-of that design.
+their visuals and settings. **Vines** frames each window; **OmaCritter** adds one
+small gecko that walks those edges and jumps between nearby windows.
 
 This repository currently contains:
 
-- a standalone Qt 6/QML study for developing and previewing the Vines look;
-- a native Hyprland plugin that attaches the pack to real windows and renders
-  its stem, leaves, and buds inside the compositor.
+- a standalone Qt 6/QML study for previewing Vines and OmaCritter together;
+- a native Hyprland plugin that renders both packs against live window geometry
+  inside the compositor.
 
 The intended product remains hybrid: native rendering for exact window
 geometry, plus a Quickshell/QML companion for previews, palettes, controls, and
@@ -31,11 +31,18 @@ staged sprouts, motion disablement, per-window procedural leaf layouts, and live
 Retro 82 ↔ Hackerman theme changes also pass. Mixed-monitor and long-running
 performance tests remain.
 
+OmaCritter passes the deterministic QML study, clean native build, ABI guard,
+plugin registration, attachment to existing/new windows, runtime configuration,
+and a 2× live render. The extended motion test was interrupted by an AMD GPU
+reset triggered when `gpu-screen-recorder` started; it did not establish a
+plugin crash. See [the incident report](docs/INCIDENT_2026-08-30.md) before
+running another live test.
+
 ## Effect packs
 
-`vines` is the first built-in pack. Its QML and native sources live under
-matching `packs/vines` directories so another effect can follow the same
-boundary without being tangled into the host.
+`vines` and `critter` are built-in packs. Their QML and native sources live
+under matching `packs/<id>` directories and are registered through one small
+compile-time host registry.
 
 Ideas such as frost, embers, stars, moss, circuits, or seasonal frames can
 become later packs while sharing one compositor integration.
@@ -60,8 +67,9 @@ Regenerate the deterministic preview image:
 ./scripts/capture-qml-prototype
 ```
 
-The study is asset-free: its stems, leaves, veins, and buds are QML vector
-paths and primitives.
+The study is asset-free: its vines and gecko are QML vector paths and
+primitives. It animates walking, crouching, a curved inter-window flight, and
+landing around two simulated windows.
 
 ## Native plugin
 
@@ -89,11 +97,20 @@ curves in memory, then placed at stable pseudo-random intervals with three tilt
 variants. Windows of the same size therefore do not receive identical foliage,
 but a window's layout does not jitter from frame to frame.
 
+OmaCritter is one global, click-through actor rather than one pet per window.
+It idles and walks around all four edges of its host, then selects one of the
+three nearest eligible windows on the same visible workspace and monitor. A
+short crouch leads into a compositor-global arcing flight, followed by a
+landing pose and ownership transfer. Reduced-motion mode parks it on the active
+window and disarms its animation timer.
+
 ![Native OmaFrames Vines decoration around a Foot test window](docs/native-foot-test.png)
 
 ![Native Vines growth: beginning, midpoint, and complete](docs/native-growth-test.png)
 
 ![Native theme inheritance: Retro 82, Hackerman, and restored Retro 82](docs/native-theme-test.png)
+
+![Native OmaCritter perched between two tiled windows](docs/native-critter-live-test.png)
 
 The compositor test matrix is documented in
 [the live-test report](docs/LIVE_TEST.md).
@@ -140,6 +157,23 @@ hyprctl eval 'hl.config({ plugin = { omaframes = { vines = { animation_enabled =
 `col.stem`, `col.leaf`, and `col.bud` values instead. `growth_duration_ms`
 defaults to 1800 and accepts 100–15000 milliseconds. The default extent is 18
 logical pixels and the default leaf length is 16 logical pixels.
+
+OmaCritter exposes:
+
+```text
+plugin:omaframes:critter:enabled
+plugin:omaframes:critter:motion_enabled
+plugin:omaframes:critter:theme_aware
+plugin:omaframes:critter:hide_on_fullscreen
+plugin:omaframes:critter:size
+plugin:omaframes:critter:walk_speed
+plugin:omaframes:critter:jump_interval_ms
+plugin:omaframes:critter:col.body
+plugin:omaframes:critter:col.accent
+```
+
+The defaults are a 30-pixel gecko, 44 logical pixels/second walking speed, and
+roughly 12 seconds between jump opportunities.
 
 ## Verification
 

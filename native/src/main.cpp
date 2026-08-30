@@ -11,9 +11,16 @@
 #include <hyprland/src/render/Renderer.hpp>
 
 #include "globals.hpp"
-#include "packs/vines/VinePack.hpp"
+#include "packs/BuiltInPacks.hpp"
 
-namespace Vines = OmaFrames::Packs::Vines;
+namespace {
+CHyprSignalListener newWindowListener;
+
+void attachBuiltInPacks(PHLWINDOW window) {
+    for (const auto& pack : OmaFrames::Packs::builtInPacks())
+        pack.attach(window);
+}
+}
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
     return HYPRLAND_API_VERSION;
@@ -29,22 +36,31 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         throw std::runtime_error("[omaframes] Hyprland/header version mismatch");
     }
 
-    Vines::registerConfig();
+    for (const auto& pack : OmaFrames::Packs::builtInPacks())
+        pack.registerConfig();
+
     HyprlandAPI::reloadConfig();
 
-    static auto newWindowListener = Event::bus()->m_events.window.open.listen([](PHLWINDOW window) { Vines::attach(window); });
+    newWindowListener = Event::bus()->m_events.window.open.listen([](PHLWINDOW window) { attachBuiltInPacks(window); });
 
     for (auto& window : Desktop::windowState()->windows()) {
         if (window->isHidden() || !window->m_isMapped)
             continue;
 
-        Vines::attach(window);
+        attachBuiltInPacks(window);
     }
 
-    HyprlandAPI::addNotification(pluginHandle, "[omaframes] Vines pack loaded", CHyprColor{0.35, 0.85, 0.42, 1.0}, 3500);
-    return {"omaframes", "Extensible living window decorations; includes Vines", "OmaFrames contributors", "0.4.1-prototype"};
+    for (const auto& pack : OmaFrames::Packs::builtInPacks())
+        pack.start();
+
+    HyprlandAPI::addNotification(pluginHandle, "[omaframes] Vines and OmaCritter loaded", CHyprColor{0.35, 0.85, 0.42, 1.0}, 3500);
+    return {"omaframes", "Extensible living window effects; includes Vines and OmaCritter", "OmaFrames contributors", "0.5.0-prototype"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
-    Vines::unload();
+    newWindowListener.reset();
+
+    const auto packs = OmaFrames::Packs::builtInPacks();
+    for (auto iterator = packs.rbegin(); iterator != packs.rend(); ++iterator)
+        iterator->stop();
 }

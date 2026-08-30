@@ -9,6 +9,7 @@ if [[ ! -x "$qml_linter" ]]; then
 fi
 
 "$qml_linter" \
+    "$project_dir/qml/packs/critter/Critter.qml" \
     "$project_dir/qml/packs/vines/Leaf.qml" \
     "$project_dir/qml/packs/vines/VineFrame.qml" \
     "$project_dir/qml/Study.qml" \

@@ -12,18 +12,21 @@ Each pack lives under `native/src/packs/<id>/` and owns:
 - its `IHyprWindowDecoration` and render-pass elements;
 - duplicate-attachment protection and render-pass cleanup.
 
-The host currently calls three pack operations:
+The host iterates a compile-time registry and calls four pack operations:
 
 ```cpp
 void registerConfig();
+void start();
 void attach(PHLWINDOW window);
-void unload();
+void stop();
 ```
 
 The pack is compiled into `omaframes-native.so`. This avoids introducing a
 second unstable binary interface on top of Hyprland's own unstable plugin ABI.
-Once two substantially different effects exercise this contract, a common
-interface or registry can replace the direct calls.
+`registerConfig` runs before Hyprland reloads its configuration. Existing and
+new windows then receive `attach`, shared directors begin in `start`, and packs
+release timers, listeners, textures, and pass elements in reverse order through
+`stop`.
 
 ## QML pack
 
@@ -44,3 +47,13 @@ window's resolved Hyprland border gradient by default. It also owns a stable
 procedural seed for variable foliage placement and reuses a small cache of
 theme-colored leaf textures at several rotations. Its QML pack contains the
 richer visual reference used to guide the native renderer.
+
+## Current pack: OmaCritter
+
+OmaCritter uses a decoration on each window as a geometry and render-pass hook,
+but keeps one actor in a pack-wide director. The director owns eligibility,
+host and target selection, behavior state, bounded damage, and the shared
+procedural texture cache. Perched drawing follows the host window; airborne
+drawing switches to one compositor-global pass until landing transfers host
+ownership. The matching QML component is a vector behavior study, not the live
+renderer.

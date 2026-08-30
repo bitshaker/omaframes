@@ -45,6 +45,8 @@ void registerConfig() {
     HyprlandAPI::addConfigValueV2(pluginHandle, packConfig.budColor);
 }
 
+void start() {}
+
 void attach(PHLWINDOW window) {
     if (std::ranges::any_of(window->m_windowDecorations,
                             [](const auto& decoration) { return decoration->getDisplayName() == DISPLAY_NAME; }))
@@ -53,7 +55,7 @@ void attach(PHLWINDOW window) {
     HyprlandAPI::addWindowDecoration(pluginHandle, window, makeUnique<CVineDecoration>(window));
 }
 
-void unload() {
+void stop() {
     g_pHyprRenderer->m_renderPass.removeAllOfType(PASS_NAME.data());
 }
 }
