@@ -7,9 +7,10 @@
 #include <chrono>
 #include <cstdint>
 
-#include <hyprland/src/helpers/signal/Signal.hpp>
 #include <hyprland/src/render/decorations/IHyprWindowDecoration.hpp>
 #include <hyprland/src/render/Texture.hpp>
+
+class CEventLoopTimer;
 
 namespace OmaFrames::Packs::Vines {
 class CVineDecoration : public IHyprWindowDecoration {
@@ -30,6 +31,7 @@ class CVineDecoration : public IHyprWindowDecoration {
   private:
     double growthProgress() const;
     bool   animationRunning() const;
+    void   onAnimationTimer(SP<CEventLoopTimer> timer);
     void   drawPass(PHLMONITOR monitor, const float& alpha);
 
     SBoxExtents                           m_extents;
@@ -43,7 +45,7 @@ class CVineDecoration : public IHyprWindowDecoration {
     uint64_t                              m_leafTextureKey = UINT64_MAX;
     uint64_t                              m_layoutSeed      = 0;
     std::chrono::steady_clock::time_point m_growthStartedAt;
-    CHyprSignalListener                   m_tickListener;
+    SP<CEventLoopTimer>                   m_animationTimer;
 
     friend class CVinePassElement;
 };

@@ -57,10 +57,15 @@ decoration owns a stable procedural layout seed, so leaf counts, spacing,
 rotation, and short sprout delays vary between windows without changing every
 frame.
 
-Each decoration also owns a monotonic growth clock. A compositor tick damages
-only the decoration while active; the stem advances clockwise around four
-perimeter segments and each leaf or bud sprouts after the stem reaches its
-position. Hyprland's standard border is never replaced.
+Each decoration also owns a monotonic growth clock and a short-lived Hyprland
+event-loop timer. The timer damages the window's current full bounds every 8 ms
+while growth is active, including one final settled frame, then disarms itself.
+It cannot depend on Hyprland's generic animation tick because that tick goes
+idle once the window-opening animation ends. Using Hyprland's live bounds keeps
+invalidation aligned while a newly mapped window and its tiled neighbors are
+still moving or resizing. The stem advances clockwise around four perimeter
+segments and each leaf or bud sprouts after the stem reaches its position.
+Hyprland's standard border is never replaced.
 
 Theme-aware mode reads the window's already-resolved `m_realBorderColor`
 gradient during rendering. That means active/inactive transitions, window-rule

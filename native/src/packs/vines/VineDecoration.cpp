@@ -9,7 +9,8 @@
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
-#include <hyprland/src/event/EventBus.hpp>
+#include <hyprland/src/managers/eventLoop/EventLoopManager.hpp>
+#include <hyprland/src/managers/eventLoop/EventLoopTimer.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 
@@ -22,6 +23,7 @@ namespace OmaFrames::Packs::Vines {
 namespace {
 constexpr uint8_t ALL_EDGES = DECORATION_EDGE_BOTTOM | DECORATION_EDGE_LEFT | DECORATION_EDGE_RIGHT | DECORATION_EDGE_TOP;
 constexpr double  SPROUT_WINDOW = 0.075;
+constexpr auto    ANIMATION_FRAME_INTERVAL = std::chrono::milliseconds(8);
 
 struct SPalette {
     Config::CGradientValueData stem;
@@ -238,11 +240,7 @@ SPalette resolvedPalette(PHLWINDOW window) {
 }
 
 CVineDecoration::CVineDecoration(PHLWINDOW window) :
-    IHyprWindowDecoration(window), m_window(window), m_growthStartedAt(std::chrono::steady_clock::now()),
-    m_tickListener(Event::bus()->m_events.tick.listen([this] {
-        if (animationRunning())
-            damageEntire();
-    })) {
+    IHyprWindowDecoration(window), m_window(window), m_growthStartedAt(std::chrono::steady_clock::now()) {
     m_lastWindowPosition = window->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
     m_lastWindowSize     = window->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
     m_layoutSeed         = reinterpret_cast<uintptr_t>(window.get()) ^ static_cast<uint64_t>(m_growthStartedAt.time_since_epoch().count());
@@ -250,9 +248,20 @@ CVineDecoration::CVineDecoration(PHLWINDOW window) :
     const double extent = configuredExtent();
     m_extents           = {{extent, extent}, {extent, extent}};
     m_lastRelativeBox   = CBox{0, 0, m_lastWindowSize.x, m_lastWindowSize.y}.addExtents(m_extents);
+
+    if (config().enabled->value() && config().animationEnabled->value() && g_pEventLoopManager) {
+        m_animationTimer = makeShared<CEventLoopTimer>(
+            ANIMATION_FRAME_INTERVAL, [](SP<CEventLoopTimer> timer, void* data) { static_cast<CVineDecoration*>(data)->onAnimationTimer(timer); }, this);
+        g_pEventLoopManager->addTimer(m_animationTimer);
+    }
 }
 
 CVineDecoration::~CVineDecoration() {
+    if (m_animationTimer && g_pEventLoopManager) {
+        g_pEventLoopManager->removeTimer(m_animationTimer);
+        m_animationTimer.reset();
+    }
+
     damageEntire();
 }
 
@@ -269,6 +278,17 @@ bool CVineDecoration::animationRunning() const {
     return config().enabled->value() && config().animationEnabled->value() && growthProgress() < 1.0;
 }
 
+void CVineDecoration::onAnimationTimer(SP<CEventLoopTimer> timer) {
+    if (!config().enabled->value())
+        return;
+
+    // Damage first so the terminal callback always schedules the exact 1.0
+    // frame, then stop rearming once growth has settled.
+    damageEntire();
+    if (animationRunning())
+        timer->updateTimeout(ANIMATION_FRAME_INTERVAL);
+}
+
 SDecorationPositioningInfo CVineDecoration::getPositioningInfo() {
     const double extent = configuredExtent();
 
@@ -283,6 +303,7 @@ SDecorationPositioningInfo CVineDecoration::getPositioningInfo() {
 
 void CVineDecoration::onPositioningReply(const SDecorationPositioningReply& reply) {
     m_assignedGeometry = reply.assignedGeometry;
+    damageEntire();
 }
 
 uint64_t CVineDecoration::getDecorationFlags() {
@@ -462,12 +483,29 @@ eDecorationType CVineDecoration::getDecorationType() {
 }
 
 void CVineDecoration::updateWindow(PHLWINDOW window) {
+    // Clear the previous bounds first: during a new tiled window's opening
+    // animation Hyprland can move and resize its neighbors several times.
+    const CBox previousDamage = m_lastRelativeBox.copy().translate(m_lastWindowPosition).expand(3);
+    g_pHyprRenderer->damageBox(previousDamage);
+
     m_lastWindowPosition = window->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
     m_lastWindowSize     = window->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+
+    const double extent = configuredExtent();
+    m_extents           = {{extent, extent}, {extent, extent}};
+    m_lastRelativeBox   = CBox{0, 0, m_lastWindowSize.x, m_lastWindowSize.y}.addExtents(m_extents);
     damageEntire();
 }
 
 void CVineDecoration::damageEntire() {
+    // Hyprland's live window bounds include current layout/open-animation
+    // geometry, workspace offsets, floating offsets, and all decorations.
+    // Prefer them over our cache, which can briefly lag a newly mapped window.
+    if (const auto window = m_window.lock(); window && window->m_isMapped) {
+        g_pHyprRenderer->damageWindow(window);
+        return;
+    }
+
     CBox damage = m_lastRelativeBox.copy().translate(m_lastWindowPosition).expand(3);
     g_pHyprRenderer->damageBox(damage);
 }

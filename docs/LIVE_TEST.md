@@ -42,6 +42,20 @@ plugin reload, layout shift, config error, or compositor error.
 
 ![Theme-aware natural leaves under Retro 82, Hackerman, and restored Retro 82](native-theme-test.png)
 
+A growth-stall regression was then isolated and tested as version
+`0.4.1-prototype`. The original renderer listened to Hyprland's generic
+animation tick, which goes idle when the compositor has no active native
+animation. A vine could therefore freeze near the end of a window-opening
+animation and jump to its time-based completed state only after focus or a
+screenshot caused fresh damage.
+
+The replacement uses a short-lived Hyprland event-loop timer to damage the
+window throughout growth and once at completion. An existing focused ChatGPT
+window completed an 8000 ms diagnostic run without a focus change. A Foot
+window launched through Omarchy's actual `omarchy-launch-terminal` path then
+completed a 3000 ms run without the old workaround; the result was also
+confirmed directly in the live compositor. No persistent config was changed.
+
 ## Passed
 
 | Check | Result |
@@ -59,6 +73,9 @@ plugin reload, layout shift, config error, or compositor error.
 | Heart-shaped leaf silhouette and visible tilt variants | Pass |
 | Variable stable layout across same-sized Foot windows | Pass |
 | Per-window clockwise stem growth | Pass |
+| Growth continues after Hyprland's opening animation becomes idle | Pass |
+| Final completed frame without focus or screenshot damage | Pass |
+| Exact Omarchy Foot launcher regression path | Pass |
 | Randomized leaves and buds staged behind stem progress | Pass |
 | Standard Hyprland border retained | Pass |
 | Runtime animation disable | Pass |
@@ -110,6 +127,9 @@ screen edge, so no vines remain visible and no corruption appears.
   `hyprctl keyword` path is unavailable with the Lua config provider.
 - A full-border render call cannot be progressively clipped in this path;
   explicit perimeter segments provide a reliable prototype reveal.
+- Hyprland's generic animation tick is conditional on native animated
+  variables and cannot drive an independent plugin animation. OmaFrames now
+  owns a timer that disarms as soon as each vine finishes growing.
 
 ## Still to test
 
