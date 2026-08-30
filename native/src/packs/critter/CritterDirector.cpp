@@ -27,8 +27,9 @@ using namespace Render::GL;
 
 namespace OmaFrames::Packs::Critter {
 namespace {
-constexpr auto   ACTIVE_FRAME_INTERVAL = std::chrono::milliseconds(16);
-constexpr double PI                    = std::numbers::pi;
+constexpr auto   ACTIVE_FRAME_INTERVAL    = std::chrono::milliseconds(16);
+constexpr auto   RAIL_TRANSITION_DURATION = std::chrono::milliseconds(180);
+constexpr double PI                       = std::numbers::pi;
 
 struct SPalette {
     CHyprColor body;
@@ -266,6 +267,20 @@ std::string_view edgeName(const CCritterDirector::EEdge edge) {
     return "unknown";
 }
 
+std::string_view placementName(const CCritterDirector::EPlacement placement) {
+    switch (placement) {
+        case CCritterDirector::EPlacement::OUTWARD: return "outward";
+        case CCritterDirector::EPlacement::MONITOR_BOUNDARY_INWARD: return "monitor-boundary-inward";
+        case CCritterDirector::EPlacement::TILED_OCCLUSION_INWARD: return "tiled-occlusion-inward";
+        case CCritterDirector::EPlacement::AIRBORNE: return "airborne";
+    }
+    return "unknown";
+}
+
+double placementFactor(const CCritterDirector::EPlacement placement) {
+    return placement == CCritterDirector::EPlacement::OUTWARD ? 1.0 : -1.0;
+}
+
 CCritterDirector::EEdge oppositeEdge(const CCritterDirector::EEdge edge) {
     switch (edge) {
         case CCritterDirector::EEdge::TOP: return CCritterDirector::EEdge::BOTTOM;
@@ -300,10 +315,16 @@ void CCritterDirector::start() {
         if (stage == RENDER_POST_WINDOWS)
             queueFlightPass();
     });
-    m_activeWindowListener = Event::bus()->m_events.window.active.listen([this](PHLWINDOW, Desktop::eFocusReason) { topologyChanged(); });
+    m_activeWindowListener = Event::bus()->m_events.window.active.listen([this](PHLWINDOW active, Desktop::eFocusReason) { activeWindowChanged(active); });
     m_closeWindowListener  = Event::bus()->m_events.window.close.listen([this](PHLWINDOW) { topologyChanged(); });
     m_moveWindowListener = Event::bus()->m_events.window.moveToWorkspace.listen([this](PHLWINDOW, PHLWORKSPACE) { topologyChanged(); });
     m_fullscreenListener = Event::bus()->m_events.window.fullscreen.listen([this](PHLWINDOW) { topologyChanged(); });
+    m_floatingListener = Event::bus()->m_events.window.floating.listen([this](PHLWINDOW window) {
+        if (window == Desktop::focusState()->window())
+            activeWindowChanged(window);
+        else
+            topologyChanged();
+    });
     m_workspaceListener  = Event::bus()->m_events.workspace.active.listen([this](PHLWORKSPACE) { topologyChanged(); });
     m_monitorLayoutListener = Event::bus()->m_events.monitor.layoutChanged.listen([this]() { topologyChanged(); });
     m_configListener = Event::bus()->m_events.config.props_refreshed.listen([this](const bool) {
@@ -337,6 +358,7 @@ void CCritterDirector::stop() {
     m_closeWindowListener.reset();
     m_moveWindowListener.reset();
     m_fullscreenListener.reset();
+    m_floatingListener.reset();
     m_workspaceListener.reset();
     m_monitorLayoutListener.reset();
     m_configListener.reset();
@@ -347,6 +369,9 @@ void CCritterDirector::stop() {
     m_target.reset();
     m_flightMonitor.reset();
     m_lastActorBox.reset();
+    m_lastPlacement.reset();
+    m_railTransition.reset();
+    m_activeWindowOverride.reset();
     m_textures.fill(nullptr);
     m_textureKey = UINT64_MAX;
     damageActorTransition(previous, std::nullopt);
@@ -372,18 +397,32 @@ std::string CCritterDirector::status(const bool json) const {
                << (config().motionEnabled->value() ? "true" : "false") << ",\"phase\":\"" << phaseName(m_phase)
                << "\",\"host\":\"" << windowAddress(host) << "\",\"target\":\"" << windowAddress(target)
                << "\",\"eligibleTargets\":" << targets << ",\"actorVisible\":" << (actor ? "true" : "false");
-        if (actor)
+        if (actor) {
             stream << ",\"actor\":{\"x\":" << actor->box.x << ",\"y\":" << actor->box.y << ",\"size\":" << actor->box.width
-                   << ",\"edge\":\"" << edgeName(actor->edge) << "\",\"inward\":" << (actor->inward ? "true" : "false") << "}";
+                   << ",\"edge\":\"" << edgeName(actor->edge) << "\",\"placement\":\"" << placementName(actor->placement)
+                   << "\",\"inward\":" << (actor->inward ? "true" : "false")
+                   << ",\"transitioning\":" << (actor->transitioning ? "true" : "false") << "}";
+            if (m_phase == EPhase::AIRBORNE) {
+                const auto destination = railPoint(target, m_flightLanding, now, false);
+                stream << ",\"destinationPlacement\":\"" << placementName(destination.placement) << "\"";
+            }
+        }
         stream << "}\n";
         return stream.str();
     }
 
     stream << "phase=" << phaseName(m_phase) << " host=" << windowAddress(host) << " target=" << windowAddress(target)
            << " eligible_targets=" << targets << " actor_visible=" << (actor ? "true" : "false");
-    if (actor)
+    if (actor) {
         stream << " actor_x=" << actor->box.x << " actor_y=" << actor->box.y << " actor_size=" << actor->box.width
-               << " actor_edge=" << edgeName(actor->edge) << " actor_inward=" << (actor->inward ? "true" : "false");
+               << " actor_edge=" << edgeName(actor->edge) << " actor_placement=" << placementName(actor->placement)
+               << " actor_inward=" << (actor->inward ? "true" : "false")
+               << " actor_transitioning=" << (actor->transitioning ? "true" : "false");
+        if (m_phase == EPhase::AIRBORNE) {
+            const auto destination = railPoint(target, m_flightLanding, now, false);
+            stream << " destination_placement=" << placementName(destination.placement);
+        }
+    }
     stream << '\n';
     return stream.str();
 }
@@ -427,9 +466,11 @@ bool CCritterDirector::forceJump(std::string& error) {
         return false;
     }
 
-    const auto current = actorBox(now);
-    damageActorTransition(previous, current);
-    m_lastActorBox = current;
+    m_railTransition.reset();
+    const auto current = actorState(now);
+    damageActorTransition(previous, current ? std::optional{current->box} : std::nullopt);
+    m_lastActorBox  = current ? std::optional{current->box} : std::nullopt;
+    m_lastPlacement = current ? std::optional{current->placement} : std::nullopt;
     armTimer(now);
     return true;
 }
@@ -514,11 +555,23 @@ CBox CCritterDirector::monitorBox(PHLWINDOW window) const {
     return {monitor->m_position.x, monitor->m_position.y, monitor->m_size.x, monitor->m_size.y};
 }
 
+bool CCritterDirector::tiledActiveWindowOccludes(PHLWINDOW host, const CBox& outwardActorBox) const {
+    const auto active = m_activeWindowOverride ? m_activeWindowOverride.lock() : Desktop::focusState()->window();
+    if (!host || host->m_isFloating || !active || active == host || active->m_isFloating || active->m_pinned || !active->m_isMapped || active->isHidden() ||
+        !active->m_workspace || !active->m_workspace->isVisible())
+        return false;
+    if (active->m_workspace != host->m_workspace || active->m_monitor != host->m_monitor)
+        return false;
+
+    return windowRailBox(active).overlaps(outwardActorBox);
+}
+
 double CCritterDirector::perimeterLength(const CBox& box) const {
     return std::max(1.0, 2.0 * (box.width + box.height));
 }
 
-CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, double position) const {
+CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, double position, const Clock::time_point now,
+                                                        const bool applyTransition) const {
     const auto   box       = windowRailBox(window);
     const double perimeter = perimeterLength(box);
     position               = std::fmod(position, perimeter);
@@ -537,10 +590,11 @@ CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, doubl
         const double along = position - 2.0 * box.width - box.height;
         landing            = {.edge = EEdge::LEFT, .fraction = 1.0 - along / std::max(1.0, box.height)};
     }
-    return railPoint(window, landing);
+    return railPoint(window, landing, now, applyTransition);
 }
 
-CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, const SLanding& landing) const {
+CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, const SLanding& landing, const Clock::time_point now,
+                                                        const bool applyTransition) const {
     const CBox   box      = windowRailBox(window);
     const CBox   bounds   = monitorBox(window);
     const double fraction = clampUnit(landing.fraction);
@@ -577,8 +631,28 @@ CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, const
             break;
     }
 
-    point.inward = bounds.width > 0 && bounds.height > 0 && outwardClearance < required;
-    point.center = point.contact + outwardNormal * (point.inward ? -offset : offset);
+    const Vector2D outwardCenter = point.contact + outwardNormal * offset;
+    const CBox     outwardActorBox{outwardCenter.x - size / 2.0, outwardCenter.y - size / 2.0, size, size};
+
+    // Output clipping takes precedence. At internal rails, only the active
+    // tiled window's animated box can turn the actor inward; the exact actor
+    // box keeps unrelated portions of broadly adjacent windows out of it.
+    if (bounds.width > 0 && bounds.height > 0 && outwardClearance < required)
+        point.placement = EPlacement::MONITOR_BOUNDARY_INWARD;
+    else if (tiledActiveWindowOccludes(window, outwardActorBox))
+        point.placement = EPlacement::TILED_OCCLUSION_INWARD;
+
+    double factor = placementFactor(point.placement);
+    if (applyTransition && m_railTransition && m_railTransition->host.lock() == window && m_railTransition->edge == point.edge &&
+        m_railTransition->destination == point.placement) {
+        const auto elapsed = std::chrono::duration<double, std::milli>(now - m_railTransition->started).count();
+        const auto raw     = clampUnit(elapsed / static_cast<double>(RAIL_TRANSITION_DURATION.count()));
+        factor = m_railTransition->fromFactor + (m_railTransition->toFactor - m_railTransition->fromFactor) * smoothstep(raw);
+        point.transitioning = raw < 1.0;
+    }
+
+    point.inward = factor <= 0.0;
+    point.center = point.contact + outwardNormal * (offset * factor);
 
     // Keep even the transparent texture box inside the output. The correction
     // is only a few logical pixels after the rail has flipped inward, and it
@@ -602,8 +676,10 @@ CCritterDirector::SLanding CCritterDirector::closestLanding(PHLWINDOW target, co
         SLanding{.edge = EEdge::LEFT, .fraction = yFraction},
     };
 
+    const auto now = Clock::now();
     return *std::ranges::min_element(candidates, [&](const auto& first, const auto& second) {
-        return distanceSquared(railPoint(target, first).center, source) < distanceSquared(railPoint(target, second).center, source);
+        return distanceSquared(railPoint(target, first, now, false).center, source) <
+            distanceSquared(railPoint(target, second, now, false).center, source);
     });
 }
 
@@ -633,7 +709,8 @@ std::optional<CCritterDirector::SActorState> CCritterDirector::actorState(const 
         const auto elapsed  = std::chrono::duration<double, std::milli>(now - m_phaseStarted).count();
         const double raw    = clampUnit(elapsed / duration);
         const double travel = smoothstep(raw);
-        const auto   finish = railPoint(target, m_flightLanding).center;
+        const auto   destination = railPoint(target, m_flightLanding, now, false);
+        const auto   finish      = destination.center;
         const double distance = std::sqrt(distanceSquared(m_flightStart, finish));
         const double arc      = std::clamp(distance * 0.24, 48.0, 180.0) * std::sin(PI * raw);
         auto center = m_flightStart + (finish - m_flightStart) * travel + Vector2D{0.0, -arc};
@@ -646,11 +723,13 @@ std::optional<CCritterDirector::SActorState> CCritterDirector::actorState(const 
             .pose          = EPose::FLIGHT,
             .forward       = finish.x >= m_flightStart.x,
             .inward        = false,
+            .transitioning = false,
+            .placement     = EPlacement::AIRBORNE,
             .paletteWindow = host,
         };
     }
 
-    const auto point = railPoint(host, m_perimeterPosition);
+    const auto point = railPoint(host, m_perimeterPosition, now);
     EPose      pose  = EPose::IDLE;
     if (m_phase == EPhase::WALKING) {
         const auto frame = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_phaseStarted).count() / 150;
@@ -668,15 +747,10 @@ std::optional<CCritterDirector::SActorState> CCritterDirector::actorState(const 
         .pose          = pose,
         .forward       = point.inward ? m_direction < 0 : m_direction > 0,
         .inward        = point.inward,
+        .transitioning = point.transitioning,
+        .placement     = point.placement,
         .paletteWindow = host,
     };
-}
-
-std::optional<CBox> CCritterDirector::actorBox(const Clock::time_point now) const {
-    const auto state = actorState(now);
-    if (!state)
-        return std::nullopt;
-    return state->box;
 }
 
 void CCritterDirector::ensureHost(const Clock::time_point now) {
@@ -702,6 +776,7 @@ void CCritterDirector::ensureHost(const Clock::time_point now) {
 
     m_host              = host;
     m_target.reset();
+    m_railTransition.reset();
     m_phase             = EPhase::IDLE;
     m_phaseStarted      = now;
     m_phaseDeadline     = now + randomizedIdleDuration();
@@ -757,7 +832,7 @@ void CCritterDirector::beginFlight(const Clock::time_point now) {
     m_flightLanding = closestLanding(target, m_flightStart);
     m_flightMonitor = host->m_monitor;
 
-    const auto targetCenter = railPoint(target, m_flightLanding).center;
+    const auto targetCenter = railPoint(target, m_flightLanding, now, false).center;
     const auto distance     = std::sqrt(distanceSquared(m_flightStart, targetCenter));
     m_flightDuration = std::chrono::milliseconds(static_cast<int64_t>(std::clamp(420.0 + distance * 0.46, 540.0, 1200.0)));
     m_phase          = EPhase::AIRBORNE;
@@ -776,6 +851,7 @@ void CCritterDirector::finishFlight(const Clock::time_point now) {
     m_perimeterPosition = perimeterPosition(windowRailBox(target), m_flightLanding);
     m_target.reset();
     m_flightMonitor.reset();
+    m_railTransition.reset();
     m_phase         = EPhase::LANDING;
     m_phaseStarted  = now;
     m_phaseDeadline = now + std::chrono::milliseconds(240);
@@ -783,6 +859,9 @@ void CCritterDirector::finishFlight(const Clock::time_point now) {
 }
 
 void CCritterDirector::update(const Clock::time_point now) {
+    if (m_railTransition && now - m_railTransition->started >= RAIL_TRANSITION_DURATION)
+        m_railTransition.reset();
+
     ensureHost(now);
     if (m_phase == EPhase::HIDDEN)
         return;
@@ -855,14 +934,76 @@ void CCritterDirector::topologyChanged() {
     const auto now      = Clock::now();
     const auto previous = m_lastActorBox;
     update(now);
-    const auto current = actorBox(now);
-    damageActorTransition(previous, current);
-    m_lastActorBox = current;
+    updateRailTransition(now);
+    const auto current = actorState(now);
+    damageActorTransition(previous, current ? std::optional{current->box} : std::nullopt);
+    m_lastActorBox  = current ? std::optional{current->box} : std::nullopt;
+    m_lastPlacement = current ? std::optional{current->placement} : std::nullopt;
+    armTimer(now);
+}
+
+void CCritterDirector::updateRailTransition(const Clock::time_point now) {
+    const auto host = m_host.lock();
+    if (!m_lastActorBox || !m_lastPlacement || !eligible(host) || m_phase == EPhase::AIRBORNE)
+        return;
+
+    const auto destination = railPoint(host, m_perimeterPosition, now, false);
+    if (m_railTransition && m_railTransition->host.lock() == host && m_railTransition->edge == destination.edge &&
+        m_railTransition->destination == destination.placement)
+        return;
+
+    const bool occlusionChanged = (*m_lastPlacement == EPlacement::TILED_OCCLUSION_INWARD ||
+                                   destination.placement == EPlacement::TILED_OCCLUSION_INWARD) &&
+        *m_lastPlacement != destination.placement;
+    if (!occlusionChanged)
+        return;
+
+    Vector2D normal;
+    switch (destination.edge) {
+        case EEdge::TOP: normal = {0.0, -1.0}; break;
+        case EEdge::RIGHT: normal = {1.0, 0.0}; break;
+        case EEdge::BOTTOM: normal = {0.0, 1.0}; break;
+        case EEdge::LEFT: normal = {-1.0, 0.0}; break;
+    }
+
+    const auto previousCenter = Vector2D{m_lastActorBox->x + m_lastActorBox->width / 2.0, m_lastActorBox->y + m_lastActorBox->height / 2.0};
+    const auto offset         = std::max(1.0, static_cast<double>(config().size->value()) * 0.42);
+    const auto delta          = previousCenter - destination.contact;
+    const auto fromFactor     = std::clamp((delta.x * normal.x + delta.y * normal.y) / offset, -1.0, 1.0);
+    m_railTransition = SRailTransition{
+        .host        = host,
+        .edge        = destination.edge,
+        .destination = destination.placement,
+        .fromFactor  = fromFactor,
+        .toFactor    = placementFactor(destination.placement),
+        .started     = now,
+    };
+}
+
+void CCritterDirector::activeWindowChanged(PHLWINDOW active) {
+    if (!m_started)
+        return;
+
+    const auto now      = Clock::now();
+    const auto previous = m_lastActorBox;
+    update(now);
+
+    // The focus event can arrive just before FocusState exposes the new
+    // window. Classify this destination against the event payload, then let
+    // normal state reads take over on the following frame.
+    m_activeWindowOverride = active;
+    updateRailTransition(now);
+    m_activeWindowOverride.reset();
+
+    const auto current = actorState(now);
+    damageActorTransition(previous, current ? std::optional{current->box} : std::nullopt);
+    m_lastActorBox  = current ? std::optional{current->box} : std::nullopt;
+    m_lastPlacement = current ? std::optional{current->placement} : std::nullopt;
     armTimer(now);
 }
 
 void CCritterDirector::windowUpdated(PHLWINDOW window) {
-    if (!m_started || (!m_host || (m_host.lock() != window && m_target.lock() != window)))
+    if (!m_started || (!m_host || (m_host.lock() != window && m_target.lock() != window && Desktop::focusState()->window() != window)))
         return;
     damageLastAndCurrent();
 }
@@ -874,16 +1015,27 @@ void CCritterDirector::onTimer(SP<CEventLoopTimer>) {
     const auto now      = Clock::now();
     const auto previous = m_lastActorBox;
     update(now);
-    const auto current = actorBox(now);
-    damageActorTransition(previous, current);
-    m_lastActorBox = current;
+    updateRailTransition(now);
+    const auto current = actorState(now);
+    damageActorTransition(previous, current ? std::optional{current->box} : std::nullopt);
+    m_lastActorBox  = current ? std::optional{current->box} : std::nullopt;
+    m_lastPlacement = current ? std::optional{current->placement} : std::nullopt;
     armTimer(now);
 }
 
 void CCritterDirector::armTimer(const Clock::time_point now) {
     if (!m_timer)
         return;
-    if (!m_started || !config().enabled->value() || m_phase == EPhase::HIDDEN || !config().motionEnabled->value()) {
+    if (!m_started || !config().enabled->value() || m_phase == EPhase::HIDDEN) {
+        m_timer->updateTimeout(std::nullopt);
+        return;
+    }
+
+    if (m_railTransition) {
+        m_timer->updateTimeout(ACTIVE_FRAME_INTERVAL);
+        return;
+    }
+    if (!config().motionEnabled->value()) {
         m_timer->updateTimeout(std::nullopt);
         return;
     }
@@ -905,9 +1057,12 @@ void CCritterDirector::damageActorTransition(const std::optional<CBox>& before, 
 }
 
 void CCritterDirector::damageLastAndCurrent() {
-    const auto current = actorBox(Clock::now());
-    damageActorTransition(m_lastActorBox, current);
-    m_lastActorBox = current;
+    const auto now = Clock::now();
+    updateRailTransition(now);
+    const auto current = actorState(now);
+    damageActorTransition(m_lastActorBox, current ? std::optional{current->box} : std::nullopt);
+    m_lastActorBox  = current ? std::optional{current->box} : std::nullopt;
+    m_lastPlacement = current ? std::optional{current->placement} : std::nullopt;
 }
 
 void CCritterDirector::queueWindowPass(PHLWINDOW window, PHLMONITOR monitor, const float alpha) {
