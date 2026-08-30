@@ -218,3 +218,26 @@ errors.
 | Hyprland config errors after cleanup | None |
 | Mixed-monitor and mixed-scale behavior | Not tested; one monitor connected |
 | Long-running GPU/damage profiling | Not yet tested |
+
+## Boundary-aware rail follow-up
+
+Date: 2026-08-30
+
+An edge-tiled window exposed a clipping bug in the original rail geometry. The
+actor center sat 42% of its size outside every window edge; where the window
+was only 12 logical pixels from the output boundary, most of the chameleon was
+off-screen.
+
+The corrected rail checks available outward clearance against the actor's full
+box. Internal edges retain the original outward pose. Output-boundary edges
+flip the normal and use the opposite wall pose, with facing reversed so the
+head still follows the direction of travel. A final logical-bounds clamp covers
+flush edges, corners, landings, and the airborne arc.
+
+On the 1440×900 logical, 2× output, the exact rebuilt plugin reached ChatGPT's
+left edge with `inward=true` and a complete 30-pixel actor box spanning
+`x=9.6…39.6`. A still image confirmed the whole mirrored creature was visible.
+A forced jump then sampled every visible actor box inside the output; the top
+of its arc stopped at `y=1`, landed on a Foot window, and settled normally.
+Transient settings were restored, the plugin unloaded cleanly, the user's
+windows were untouched, and Hyprland reported no config errors.

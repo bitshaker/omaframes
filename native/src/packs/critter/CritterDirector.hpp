@@ -63,6 +63,7 @@ class CCritterDirector {
         Vector2D center;
         EEdge    edge     = EEdge::TOP;
         double   fraction = 0;
+        bool     inward   = false;
     };
 
     struct SLanding {
@@ -72,9 +73,11 @@ class CCritterDirector {
 
     struct SActorState {
         CBox         box;
-        EEdge        edge    = EEdge::TOP;
-        EPose        pose    = EPose::IDLE;
-        bool         forward = true;
+        EEdge        edge     = EEdge::TOP;
+        EEdge        poseEdge = EEdge::TOP;
+        EPose        pose     = EPose::IDLE;
+        bool         forward  = true;
+        bool         inward   = false;
         PHLWINDOWREF paletteWindow;
     };
 
@@ -83,10 +86,11 @@ class CCritterDirector {
     PHLWINDOW                    chooseTarget(PHLWINDOW host);
     std::vector<PHLWINDOW>       eligibleTargets(PHLWINDOW host) const;
     CBox                         windowRailBox(PHLWINDOW window) const;
+    CBox                         monitorBox(PHLWINDOW window) const;
     double                       perimeterLength(const CBox& box) const;
-    SRailPoint                   railPoint(const CBox& box, double perimeterPosition) const;
-    SRailPoint                   railPoint(const CBox& box, const SLanding& landing) const;
-    SLanding                     closestLanding(const CBox& targetBox, const Vector2D& source) const;
+    SRailPoint                   railPoint(PHLWINDOW window, double perimeterPosition) const;
+    SRailPoint                   railPoint(PHLWINDOW window, const SLanding& landing) const;
+    SLanding                     closestLanding(PHLWINDOW target, const Vector2D& source) const;
     double                       perimeterPosition(const CBox& box, const SLanding& landing) const;
     std::optional<SActorState>   actorState(Clock::time_point now) const;
     std::optional<CBox>          actorBox(Clock::time_point now) const;

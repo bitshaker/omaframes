@@ -112,6 +112,12 @@ rate while motion is visible. It damages only the union of the actor's previous
 and current boxes, arms a longer deadline during idle pauses, and disarms when
 disabled or hidden.
 
+Rail placement is monitor-aware. On an internal window edge the critter remains
+outside the client as normal. If that outward pose would cross the output
+boundary, the rail normal and wall pose flip inward while travel direction is
+preserved. Perched, landing, and airborne boxes are clamped to the monitor's
+logical bounds so HiDPI scaling cannot leave only part of the creature visible.
+
 ## Rendering
 
 The initial gecko is asset-free and drawn as a small, readable silhouette in
@@ -168,6 +174,7 @@ recorder incident is documented in
 - Closing either window during a jump cannot leave stale drawing or crash.
 - One-window and zero-window workspaces are stable.
 - True fullscreen hides the actor and restoration returns it safely.
+- Maximized and edge-tiled windows keep the complete actor inside the monitor.
 - Runtime enable, reduced motion, size, speed, jump interval, and theme controls
   apply without a plugin reload.
 - The critter is click-through and does not reserve layout space.

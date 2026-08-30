@@ -234,6 +234,16 @@ double distanceSquared(const Vector2D& first, const Vector2D& second) {
     return x * x + y * y;
 }
 
+Vector2D clampActorCenter(Vector2D center, const CBox& bounds, const double size) {
+    constexpr double MARGIN = 1.0;
+    if (bounds.width < size + 2.0 * MARGIN || bounds.height < size + 2.0 * MARGIN)
+        return center;
+
+    center.x = std::clamp(center.x, bounds.x + size / 2.0 + MARGIN, bounds.x + bounds.width - size / 2.0 - MARGIN);
+    center.y = std::clamp(center.y, bounds.y + size / 2.0 + MARGIN, bounds.y + bounds.height - size / 2.0 - MARGIN);
+    return center;
+}
+
 std::string_view phaseName(const CCritterDirector::EPhase phase) {
     switch (phase) {
         case CCritterDirector::EPhase::HIDDEN: return "hidden";
@@ -244,6 +254,26 @@ std::string_view phaseName(const CCritterDirector::EPhase phase) {
         case CCritterDirector::EPhase::LANDING: return "landing";
     }
     return "unknown";
+}
+
+std::string_view edgeName(const CCritterDirector::EEdge edge) {
+    switch (edge) {
+        case CCritterDirector::EEdge::TOP: return "top";
+        case CCritterDirector::EEdge::RIGHT: return "right";
+        case CCritterDirector::EEdge::BOTTOM: return "bottom";
+        case CCritterDirector::EEdge::LEFT: return "left";
+    }
+    return "unknown";
+}
+
+CCritterDirector::EEdge oppositeEdge(const CCritterDirector::EEdge edge) {
+    switch (edge) {
+        case CCritterDirector::EEdge::TOP: return CCritterDirector::EEdge::BOTTOM;
+        case CCritterDirector::EEdge::RIGHT: return CCritterDirector::EEdge::LEFT;
+        case CCritterDirector::EEdge::BOTTOM: return CCritterDirector::EEdge::TOP;
+        case CCritterDirector::EEdge::LEFT: return CCritterDirector::EEdge::RIGHT;
+    }
+    return edge;
 }
 
 std::string windowAddress(PHLWINDOW window) {
@@ -343,7 +373,8 @@ std::string CCritterDirector::status(const bool json) const {
                << "\",\"host\":\"" << windowAddress(host) << "\",\"target\":\"" << windowAddress(target)
                << "\",\"eligibleTargets\":" << targets << ",\"actorVisible\":" << (actor ? "true" : "false");
         if (actor)
-            stream << ",\"actor\":{\"x\":" << actor->box.x << ",\"y\":" << actor->box.y << ",\"size\":" << actor->box.width << "}";
+            stream << ",\"actor\":{\"x\":" << actor->box.x << ",\"y\":" << actor->box.y << ",\"size\":" << actor->box.width
+                   << ",\"edge\":\"" << edgeName(actor->edge) << "\",\"inward\":" << (actor->inward ? "true" : "false") << "}";
         stream << "}\n";
         return stream.str();
     }
@@ -351,7 +382,8 @@ std::string CCritterDirector::status(const bool json) const {
     stream << "phase=" << phaseName(m_phase) << " host=" << windowAddress(host) << " target=" << windowAddress(target)
            << " eligible_targets=" << targets << " actor_visible=" << (actor ? "true" : "false");
     if (actor)
-        stream << " actor_x=" << actor->box.x << " actor_y=" << actor->box.y << " actor_size=" << actor->box.width;
+        stream << " actor_x=" << actor->box.x << " actor_y=" << actor->box.y << " actor_size=" << actor->box.width
+               << " actor_edge=" << edgeName(actor->edge) << " actor_inward=" << (actor->inward ? "true" : "false");
     stream << '\n';
     return stream.str();
 }
@@ -472,11 +504,22 @@ CBox CCritterDirector::windowRailBox(PHLWINDOW window) const {
     return {position.x, position.y, size.x, size.y};
 }
 
+CBox CCritterDirector::monitorBox(PHLWINDOW window) const {
+    if (!window)
+        return {};
+
+    const auto monitor = window->m_monitor.lock();
+    if (!monitor)
+        return {};
+    return {monitor->m_position.x, monitor->m_position.y, monitor->m_size.x, monitor->m_size.y};
+}
+
 double CCritterDirector::perimeterLength(const CBox& box) const {
     return std::max(1.0, 2.0 * (box.width + box.height));
 }
 
-CCritterDirector::SRailPoint CCritterDirector::railPoint(const CBox& box, double position) const {
+CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, double position) const {
+    const auto   box       = windowRailBox(window);
     const double perimeter = perimeterLength(box);
     position               = std::fmod(position, perimeter);
     if (position < 0)
@@ -494,38 +537,58 @@ CCritterDirector::SRailPoint CCritterDirector::railPoint(const CBox& box, double
         const double along = position - 2.0 * box.width - box.height;
         landing            = {.edge = EEdge::LEFT, .fraction = 1.0 - along / std::max(1.0, box.height)};
     }
-    return railPoint(box, landing);
+    return railPoint(window, landing);
 }
 
-CCritterDirector::SRailPoint CCritterDirector::railPoint(const CBox& box, const SLanding& landing) const {
+CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, const SLanding& landing) const {
+    const CBox   box      = windowRailBox(window);
+    const CBox   bounds   = monitorBox(window);
     const double fraction = clampUnit(landing.fraction);
-    const double offset   = static_cast<double>(config().size->value()) * 0.42;
+    const double size     = static_cast<double>(config().size->value());
+    const double offset   = size * 0.42;
+    const double required = offset + size / 2.0 + 1.0;
     SRailPoint  point;
     point.edge     = landing.edge;
     point.fraction = fraction;
 
+    Vector2D outwardNormal;
+    double   outwardClearance = 0;
+
     switch (landing.edge) {
         case EEdge::TOP:
             point.contact = {box.x + box.width * fraction, box.y};
-            point.center  = point.contact + Vector2D{0.0, -offset};
+            outwardNormal    = {0.0, -1.0};
+            outwardClearance = box.y - bounds.y;
             break;
         case EEdge::RIGHT:
             point.contact = {box.x + box.width, box.y + box.height * fraction};
-            point.center  = point.contact + Vector2D{offset, 0.0};
+            outwardNormal    = {1.0, 0.0};
+            outwardClearance = bounds.x + bounds.width - box.x - box.width;
             break;
         case EEdge::BOTTOM:
             point.contact = {box.x + box.width * fraction, box.y + box.height};
-            point.center  = point.contact + Vector2D{0.0, offset};
+            outwardNormal    = {0.0, 1.0};
+            outwardClearance = bounds.y + bounds.height - box.y - box.height;
             break;
         case EEdge::LEFT:
             point.contact = {box.x, box.y + box.height * fraction};
-            point.center  = point.contact + Vector2D{-offset, 0.0};
+            outwardNormal    = {-1.0, 0.0};
+            outwardClearance = box.x - bounds.x;
             break;
     }
+
+    point.inward = bounds.width > 0 && bounds.height > 0 && outwardClearance < required;
+    point.center = point.contact + outwardNormal * (point.inward ? -offset : offset);
+
+    // Keep even the transparent texture box inside the output. The correction
+    // is only a few logical pixels after the rail has flipped inward, and it
+    // prevents pose extremities from being clipped on truly flush windows.
+    point.center = clampActorCenter(point.center, bounds, size);
     return point;
 }
 
-CCritterDirector::SLanding CCritterDirector::closestLanding(const CBox& targetBox, const Vector2D& source) const {
+CCritterDirector::SLanding CCritterDirector::closestLanding(PHLWINDOW target, const Vector2D& source) const {
+    const CBox   targetBox = windowRailBox(target);
     const double size       = static_cast<double>(config().size->value());
     const double horizontal = std::clamp(size * 0.8 / std::max(1.0, targetBox.width), 0.08, 0.42);
     const double vertical   = std::clamp(size * 0.8 / std::max(1.0, targetBox.height), 0.08, 0.42);
@@ -540,7 +603,7 @@ CCritterDirector::SLanding CCritterDirector::closestLanding(const CBox& targetBo
     };
 
     return *std::ranges::min_element(candidates, [&](const auto& first, const auto& second) {
-        return distanceSquared(railPoint(targetBox, first).center, source) < distanceSquared(railPoint(targetBox, second).center, source);
+        return distanceSquared(railPoint(target, first).center, source) < distanceSquared(railPoint(target, second).center, source);
     });
 }
 
@@ -570,21 +633,24 @@ std::optional<CCritterDirector::SActorState> CCritterDirector::actorState(const 
         const auto elapsed  = std::chrono::duration<double, std::milli>(now - m_phaseStarted).count();
         const double raw    = clampUnit(elapsed / duration);
         const double travel = smoothstep(raw);
-        const auto   finish = railPoint(windowRailBox(target), m_flightLanding).center;
+        const auto   finish = railPoint(target, m_flightLanding).center;
         const double distance = std::sqrt(distanceSquared(m_flightStart, finish));
         const double arc      = std::clamp(distance * 0.24, 48.0, 180.0) * std::sin(PI * raw);
-        const Vector2D center = m_flightStart + (finish - m_flightStart) * travel + Vector2D{0.0, -arc};
+        auto center = m_flightStart + (finish - m_flightStart) * travel + Vector2D{0.0, -arc};
+        center      = clampActorCenter(center, monitorBox(host), size);
 
         return SActorState{
             .box           = {center.x - size / 2.0, center.y - size / 2.0, size, size},
             .edge          = EEdge::TOP,
+            .poseEdge      = EEdge::TOP,
             .pose          = EPose::FLIGHT,
             .forward       = finish.x >= m_flightStart.x,
+            .inward        = false,
             .paletteWindow = host,
         };
     }
 
-    const auto point = railPoint(windowRailBox(host), m_perimeterPosition);
+    const auto point = railPoint(host, m_perimeterPosition);
     EPose      pose  = EPose::IDLE;
     if (m_phase == EPhase::WALKING) {
         const auto frame = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_phaseStarted).count() / 150;
@@ -598,8 +664,10 @@ std::optional<CCritterDirector::SActorState> CCritterDirector::actorState(const 
     return SActorState{
         .box           = {point.center.x - size / 2.0, point.center.y - size / 2.0, size, size},
         .edge          = point.edge,
+        .poseEdge      = point.inward ? oppositeEdge(point.edge) : point.edge,
         .pose          = pose,
-        .forward       = m_direction > 0,
+        .forward       = point.inward ? m_direction < 0 : m_direction > 0,
+        .inward        = point.inward,
         .paletteWindow = host,
     };
 }
@@ -686,10 +754,10 @@ void CCritterDirector::beginFlight(const Clock::time_point now) {
     }
 
     m_flightStart   = {current->box.x + current->box.width / 2.0, current->box.y + current->box.height / 2.0};
-    m_flightLanding = closestLanding(windowRailBox(target), m_flightStart);
+    m_flightLanding = closestLanding(target, m_flightStart);
     m_flightMonitor = host->m_monitor;
 
-    const auto targetCenter = railPoint(windowRailBox(target), m_flightLanding).center;
+    const auto targetCenter = railPoint(target, m_flightLanding).center;
     const auto distance     = std::sqrt(distanceSquared(m_flightStart, targetCenter));
     m_flightDuration = std::chrono::milliseconds(static_cast<int64_t>(std::clamp(420.0 + distance * 0.46, 540.0, 1200.0)));
     m_phase          = EPhase::AIRBORNE;
@@ -883,7 +951,7 @@ void CCritterDirector::drawPass(PHLMONITOR monitor, const PHLWINDOWREF window, c
     if (flight && paletteWindow->m_workspace)
         alpha *= paletteWindow->m_workspace->m_alpha->value();
 
-    const auto texture = textureFor(paletteWindow, state->edge, state->forward, state->pose);
+    const auto texture = textureFor(paletteWindow, state->poseEdge, state->forward, state->pose);
     if (!texture)
         return;
 
