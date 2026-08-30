@@ -48,9 +48,9 @@ procedural seed for variable foliage placement and reuses a small cache of
 theme-colored leaf textures at several rotations. Its QML pack contains the
 richer visual reference used to guide the native renderer.
 
-## Current pack: OmaCritter
+## Current pack: Chameleon
 
-OmaCritter uses a decoration on each window as a geometry and render-pass hook,
+Chameleon uses a decoration on each window as a geometry and render-pass hook,
 but keeps one actor in a pack-wide director. The director owns eligibility,
 host and target selection, behavior state, bounded damage, and the shared
 procedural texture cache. Perched drawing follows the host window; airborne

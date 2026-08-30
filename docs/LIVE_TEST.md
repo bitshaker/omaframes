@@ -144,23 +144,23 @@ The plugin was unloaded after testing, all disposable Foot windows were
 removed, the theme was restored to the user's starting theme, and no persistent
 Hyprland or Omarchy configuration file was edited manually.
 
-## OmaCritter live test
+## Chameleon live test
 
 Date: 2026-08-30
 
 OmaFrames `0.5.0-prototype` loaded against the same Hyprland 0.56.2 commit. The
 pack registry attached one `OmaFrames: Vines` decoration at priority 9980 and
-one `OmaFrames: OmaCritter` decoration at priority 9970 to the existing ChatGPT
+one `OmaFrames: Chameleon` decoration at priority 9970 to the existing ChatGPT
 window and two Foot windows opened after load. No config errors appeared. The
 perimeter walker was also confirmed directly on-screen rather than inferred
 only from compositor state.
 
 Transient Lua configuration changed jump interval, walk speed, size, palette,
-and reduced-motion state. The critter parked when motion was disabled and
-resumed when re-enabled. A high-contrast diagnostic gecko rendered on a shared
+and reduced-motion state. The chameleon parked when motion was disabled and
+resumed when re-enabled. A high-contrast diagnostic chameleon rendered on a shared
 tiled edge; the normal product default remains 30 logical pixels.
 
-![OmaCritter rendered on a tiled window edge at 2× scale](native-critter-live-test.png)
+![Chameleon rendered on a tiled window edge at 2× scale](native-critter-live-test.png)
 
 The initial run then attempted a full-screen recording. The AMD VCE encode ring
 timed out in `gpu-screen-recorder`, the ChatGPT GPU process dumped core, GPU
@@ -198,7 +198,7 @@ was active. Both OmaFrames decorations disappeared, the diagnostic command was
 unregistered, the plugin list was empty, and Hyprland reported no config
 errors.
 
-### OmaCritter results
+### Chameleon results
 
 | Check | Result |
 |---|---|

@@ -1,8 +1,9 @@
-# OmaCritter implementation plan
+# Chameleon implementation plan
 
-OmaCritter is the second built-in OmaFrames pack: one small, theme-aware
+Chameleon is the second built-in OmaFrames pack: one small, theme-aware
 creature that walks around window edges and occasionally jumps to another
-window on the same visible workspace and monitor.
+window on the same visible workspace and monitor. Its name reflects how it
+adopts active and inactive window colors and follows Omarchy theme changes.
 
 This plan deliberately keeps live rendering inside the Hyprland plugin. QML is
 used for visual study and future settings, not as a transparent desktop-sized
@@ -16,13 +17,13 @@ projects:
 - [PixelPaws](https://github.com/jordansbc/pixelpaws) separates its behavior
   state machine, per-frame simulation, window-surface discovery, and sprite
   animation. Its surface provider filters unusable windows and its engine
-  recovers when the current platform disappears. OmaCritter uses the same
+  recovers when the current platform disappears. Chameleon uses the same
   separation, but Hyprland supplies exact window geometry instead of polling
   Win32 rectangles.
 - [desktop-pet](https://github.com/7ang0n1n3/desktop-pet) demonstrates a
   Wayland/Hyprland pet with one timer, randomized walk intervals, Cairo-drawn
   creatures, and monitor-aware motion. Its layer-shell surface is appropriate
-  for a standalone application; OmaCritter instead renders in the compositor
+  for a standalone application; Chameleon instead renders in the compositor
   so it can remain attached to animated window geometry without an overlay.
 
 Classic Oneko and XPenguins establish the visual language of short idle
@@ -33,16 +34,16 @@ as physical surfaces. Their X11 root-window assumptions are not used.
 
 The first version provides:
 
-- one critter globally;
+- one chameleon globally;
 - a calm idle/walk/crouch/jump/land loop;
 - traversal around all four edges of tiled, floating, and maximized windows;
 - jumps only between eligible windows on one visible workspace and monitor;
-- a theme-aware procedural gecko rendered from cached Cairo textures;
+- a theme-aware procedural chameleon rendered from cached Cairo textures;
 - no input handling or click interception;
-- a reduced-motion mode that parks the critter on the active window;
+- a reduced-motion mode that parks the chameleon on the active window;
 - hiding during true fullscreen.
 
-Cross-monitor jumps, multiple critters, pointer interaction, feeding, speech,
+Cross-monitor jumps, multiple chameleons, pointer interaction, feeding, speech,
 and other desktop-pet features are explicitly deferred.
 
 ## Native architecture
@@ -65,14 +66,14 @@ struct SPack {
 This is not a dynamic third-party ABI. Both packs remain compiled into the one
 Hyprland plugin and therefore share its exact-version guard.
 
-### Critter pack
+### Chameleon pack
 
 - `CritterPack` owns configuration and delegates lifecycle to the director.
 - `CritterDirector` owns the single actor, monotonic clock, target selection,
   signal listeners, timer, shared texture cache, and recovery rules.
 - `CritterDecoration` is attached to every mapped window. It gives Hyprland
   correct decoration extents, receives geometry updates, and queues the
-  perched critter in the normal window decoration pass.
+  perched chameleon in the normal window decoration pass.
 - `CritterPassElement` draws one cached texture. During a jump it is queued at
   Hyprland's post-window render stage, above application windows but below
   top/overlay layer-shell surfaces and the lock screen.
@@ -104,7 +105,7 @@ arc(t)      = -height * sin(pi * t)
 ```
 
 The target rail point is refreshed while airborne so normal tiling and workspace
-animations do not leave the critter landing in empty space. Large topology
+animations do not leave the chameleon landing in empty space. Large topology
 changes abort and rehome rather than snapping across the monitor.
 
 One Hyprland event-loop timer runs at approximately the active monitor refresh
@@ -112,7 +113,7 @@ rate while motion is visible. It damages only the union of the actor's previous
 and current boxes, arms a longer deadline during idle pauses, and disarms when
 disabled or hidden.
 
-Rail placement is monitor-aware. On an internal window edge the critter remains
+Rail placement is monitor-aware. On an internal window edge the chameleon remains
 outside the client as normal. If that outward pose would cross the output
 boundary, the rail normal and wall pose flip inward while travel direction is
 preserved. Perched, landing, and airborne boxes are clamped to the monitor's
@@ -129,7 +130,7 @@ and new boxes; no compositor-global perched pass is added.
 
 ## Rendering
 
-The initial gecko is asset-free and drawn as a small, readable silhouette in
+The initial chameleon is asset-free and drawn as a small, readable silhouette in
 Cairo. The texture cache contains idle, two walk frames, crouch, flight, and
 landing poses for four window-edge orientations and both travel directions.
 Textures are shared across windows and rebuilt only when the quantized theme
@@ -137,7 +138,7 @@ palette changes. Hyprland scales the final render box for the active monitor.
 
 The perched pass uses the host window's decoration ordering alongside Vines.
 The airborne pass is compositor-global; therefore a jumping
-critter can briefly pass above application popups. It remains below Omarchy's
+chameleon can briefly pass above application popups. It remains below Omarchy's
 top and overlay layers.
 
 ## Configuration
@@ -158,7 +159,7 @@ plugin:omaframes:critter:col.accent
 
 1. Record this plan and add a deterministic QML behavior study.
 2. Introduce the built-in pack registry without changing Vines behavior.
-3. Add a static native critter and prove attachment, scaling, theming, and
+3. Add a static native chameleon and prove attachment, scaling, theming, and
    cleanup.
 4. Add perimeter walking, bounded damage, pauses, and reduced motion.
 5. Add inter-window target selection and the post-window flight pass.
@@ -176,7 +177,7 @@ recorder incident is documented in
 ## Acceptance criteria
 
 - Existing and newly opened windows receive one Critter decoration.
-- Exactly one critter is visible across all windows.
+- Exactly one chameleon is visible across all windows.
 - Walking follows live tiled/floating/maximized geometry without lag or jitter.
 - Corners rotate the pose without teleporting.
 - A jump transfers ownership with no duplicate or missing settled frame.
@@ -188,7 +189,7 @@ recorder incident is documented in
   cover the actor; floating active windows and clear internal rails do not.
 - Runtime enable, reduced motion, size, speed, jump interval, and theme controls
   apply without a plugin reload.
-- The critter is click-through and does not reserve layout space.
+- The chameleon is click-through and does not reserve layout space.
 - Animation damages bounded actor regions rather than the full monitor.
 - Vines rendering and configuration remain unchanged.
 - Repeated load/unload cycles remove timers, listeners, pass elements, and

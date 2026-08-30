@@ -9,7 +9,7 @@
 
 namespace OmaFrames::Packs::Critter {
 inline constexpr std::string_view ID           = "critter";
-inline constexpr std::string_view DISPLAY_NAME = "OmaFrames: OmaCritter";
+inline constexpr std::string_view DISPLAY_NAME = "OmaFrames: Chameleon";
 inline constexpr std::string_view PASS_NAME    = "COmaFramesCritterPassElement";
 
 struct SConfig {

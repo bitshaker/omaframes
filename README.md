@@ -2,16 +2,18 @@
 
 Playful, extensible window decorations for Omarchy and Hyprland.
 
-![OmaFrames Vines and OmaCritter QML visual study](docs/qml-preview.png)
+![OmaFrames Vines and Chameleon QML visual study](docs/qml-preview.png)
 
 OmaFrames is becoming an effect engine rather than a single vine decoration.
 The host owns Hyprland integration and effect lifecycle; individual packs own
-their visuals and settings. **Vines** frames each window; **OmaCritter** adds one
-small gecko that walks those edges and jumps between nearby windows.
+their visuals and settings. **Vines** frames each window; **Chameleon** adds one
+small, color-shifting chameleon that walks those edges and jumps between nearby
+windows. Its name reflects how it adopts active and inactive window colors as
+it moves, and changes with the current Omarchy theme.
 
 This repository currently contains:
 
-- a standalone Qt 6/QML study for previewing Vines and OmaCritter together;
+- a standalone Qt 6/QML study for previewing Vines and Chameleon together;
 - a native Hyprland plugin that renders both packs against live window geometry
   inside the compositor.
 
@@ -21,7 +23,7 @@ reduced-motion settings. See [the architecture notes](docs/ARCHITECTURE.md) and
 [the effect-pack contract](docs/PACKS.md).
 
 The first companion surface now lives in `shell/`: an Omarchy bar widget with
-a small sprout icon, a native-host load switch, and live Vines and OmaCritter
+a small sprout icon, a native-host load switch, and live Vines and Chameleon
 toggles. Its `pluginPath` setting points at the native `.so`; while developing
 from this checkout it automatically uses `native/omaframes-native.so`.
 
@@ -36,7 +38,7 @@ staged sprouts, motion disablement, per-window procedural leaf layouts, and live
 Retro 82 ↔ Hackerman theme changes also pass. Mixed-monitor and long-running
 performance tests remain.
 
-OmaCritter passes the deterministic QML study, clean native build, ABI guard,
+Chameleon passes the deterministic QML study, clean native build, ABI guard,
 plugin registration, attachment to existing/new windows, runtime configuration,
 and a 2× live render. Recorder-free follow-up testing also passed visible
 perimeter walking, deterministic jumps, closing a destination mid-flight,
@@ -47,9 +49,9 @@ documented in [the incident report](docs/INCIDENT_2026-08-30.md).
 
 ## Effect packs
 
-`vines` and `critter` are built-in packs. Their QML and native sources live
-under matching `packs/<id>` directories and are registered through one small
-compile-time host registry.
+`vines` and `critter` are built-in pack IDs; the latter is presented as
+Chameleon. Their QML and native sources live under matching `packs/<id>`
+directories and are registered through one small compile-time host registry.
 
 Ideas such as frost, embers, stars, moss, circuits, or seasonal frames can
 become later packs while sharing one compositor integration.
@@ -74,7 +76,7 @@ Regenerate the deterministic preview image:
 ./scripts/capture-qml-prototype
 ```
 
-The study is asset-free: its vines and gecko are QML vector paths and
+The study is asset-free: its vines and chameleon are QML vector paths and
 primitives. It animates walking, crouching, a curved inter-window flight, and
 landing around two simulated windows.
 
@@ -109,7 +111,7 @@ omarchy bar set bitshaker.omaframes pluginPath "$PWD/native/omaframes-native.so"
 
 Left-click the sprout icon to open the pack panel. Right-click loads or unloads
 the native host, and middle-click refreshes its status. In the panel, Vines and
-OmaCritter can be toggled independently without reloading the host.
+Chameleon can be toggled independently without reloading the host.
 
 Vines grows clockwise once when it attaches to a window. Hyprland's normal
 border stays in place while the effect renders outside it. By default, the
@@ -120,7 +122,7 @@ curves in memory, then placed at stable pseudo-random intervals with three tilt
 variants. Windows of the same size therefore do not receive identical foliage,
 but a window's layout does not jitter from frame to frame.
 
-OmaCritter is one global, click-through actor rather than one pet per window.
+Chameleon is one global, click-through actor rather than one pet per window.
 It idles and walks around all four edges of its host, then selects one of the
 three nearest eligible windows on the same visible workspace and monitor. A
 short crouch leads into a compositor-global arcing flight, followed by a
@@ -133,7 +135,7 @@ window and disarms its animation timer.
 
 ![Native theme inheritance: Retro 82, Hackerman, and restored Retro 82](docs/native-theme-test.png)
 
-![Native OmaCritter perched between two tiled windows](docs/native-critter-live-test.png)
+![Native Chameleon perched between two tiled windows](docs/native-critter-live-test.png)
 
 The compositor test matrix is documented in
 [the live-test report](docs/LIVE_TEST.md).
@@ -181,7 +183,7 @@ hyprctl eval 'hl.config({ plugin = { omaframes = { vines = { animation_enabled =
 defaults to 1800 and accepts 100–15000 milliseconds. The default extent is 18
 logical pixels and the default leaf length is 16 logical pixels.
 
-OmaCritter exposes:
+Chameleon exposes these compatibility-preserving `critter` config keys:
 
 ```text
 plugin:omaframes:critter:enabled
@@ -195,7 +197,7 @@ plugin:omaframes:critter:col.body
 plugin:omaframes:critter:col.accent
 ```
 
-The defaults are a 30-pixel gecko, 44 logical pixels/second walking speed, and
+The defaults are a 30-pixel chameleon, 44 logical pixels/second walking speed, and
 roughly 12 seconds between jump opportunities.
 
 While the plugin is loaded, its small diagnostic command reports the single

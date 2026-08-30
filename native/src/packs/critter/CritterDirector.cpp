@@ -429,11 +429,11 @@ std::string CCritterDirector::status(const bool json) const {
 
 bool CCritterDirector::forceJump(std::string& error) {
     if (!m_started || !config().enabled->value()) {
-        error = "OmaCritter is not enabled";
+        error = "Chameleon is not enabled";
         return false;
     }
     if (!config().motionEnabled->value()) {
-        error = "OmaCritter motion is disabled";
+        error = "Chameleon motion is disabled";
         return false;
     }
 
@@ -462,7 +462,7 @@ bool CCritterDirector::forceJump(std::string& error) {
     beginCrouch(now);
 
     if (m_phase != EPhase::CROUCHING) {
-        error = "OmaCritter could not select a target";
+        error = "Chameleon could not select a target";
         return false;
     }
 

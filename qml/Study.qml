@@ -73,7 +73,7 @@ Rectangle {
         spacing: 5
 
         Text {
-            text: "OMAFRAMES / VINES + OMACRITTER / STUDY 02"
+            text: "OMAFRAMES / VINES + CHAMELEON / STUDY 02"
             color: "#8ccf82"
             font.pixelSize: 13
             font.letterSpacing: 2.4

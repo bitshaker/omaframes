@@ -41,9 +41,9 @@ QML is a good fit for visual exploration and the eventual settings surface:
 - build pack previews and controls quickly;
 - provide accessibility options such as reduced motion.
 
-The current QML app is a standalone two-window Vines and OmaCritter study. It
+The current QML app is a standalone two-window Vines and Chameleon study. It
 does not track a real Hyprland window. `ShapePath.trim` provides the growth
-reveal, while a deterministic behavior timeline covers the critter's walk,
+reveal, while a deterministic behavior timeline covers the chameleon's walk,
 crouch, flight, and landing poses. Qt 6.10 or newer is required.
 
 ## Native Hyprland plugin
@@ -80,7 +80,7 @@ colors remain available as explicit overrides when theme-aware mode is off.
 Texture cache keys quantize those resolved colors to avoid rebuilding all tilt
 variants for imperceptible steps in a live border-color transition.
 
-OmaCritter differs from a normal per-window decoration because exactly one
+Chameleon differs from a normal per-window decoration because exactly one
 actor exists globally. Every window receives a lightweight decoration hook,
 but `CritterDirector` owns the selected host, target, state machine, monotonic
 clock, one event-loop timer, signal listeners, and shared textures. A perched
@@ -121,7 +121,7 @@ The likely production split is:
 - **P2 — underway:** staged native growth, procedural heart-shaped foliage,
   per-window layout variation, motion disablement, and live theme inheritance
   pass. Organic stems, restrained idle motion, and GPU/damage profiling remain.
-- **P3 — underway:** OmaCritter validates the second-pack registry, global
+- **P3 — underway:** Chameleon validates the second-pack registry, global
   actor lifecycle, and QML/native split. Complete compositor validation, the
   Quickshell settings companion, and an IPC spike remain.
 - **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions,

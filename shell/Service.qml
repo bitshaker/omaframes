@@ -145,7 +145,7 @@ Item {
     _actionError = ""
     lastError = ""
     actionStatus = (enabled ? "Enabling " : "Disabling ")
-      + (pack === "vines" ? "Vines…" : "OmaCritter…")
+      + (pack === "vines" ? "Vines…" : "Chameleon…")
 
     // Hyprland 0.56 exposes transient plugin values through its Lua config API.
     var lua = "hl.config({ plugin = { omaframes = { " + pack
@@ -250,7 +250,7 @@ Item {
       } else if (action === "unload") {
         root.actionStatus = "OmaFrames unloaded"
       } else if (action === "set") {
-        root.actionStatus = (pack === "vines" ? "Vines" : "OmaCritter") + " updated"
+        root.actionStatus = (pack === "vines" ? "Vines" : "Chameleon") + " updated"
       }
       actionSettleTimer.restart()
     }

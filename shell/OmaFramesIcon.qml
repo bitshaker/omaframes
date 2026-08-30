@@ -35,7 +35,7 @@ Item {
       ctx.lineWidth = 1.7
 
       // A compact sprout: the stem suggests Vines while the curled tail gives
-      // the silhouette a little OmaCritter personality at bar-icon size.
+      // the silhouette a little Chameleon personality at bar-icon size.
       ctx.beginPath()
       ctx.moveTo(8.9, 15.2)
       ctx.bezierCurveTo(8.7, 11.8, 9.3, 8.7, 11.7, 6.0)

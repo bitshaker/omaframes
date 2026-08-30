@@ -52,19 +52,19 @@ SConfig& config() {
 }
 
 void registerConfig() {
-    packConfig.enabled           = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:enabled", "Draw OmaCritter", true);
-    packConfig.motionEnabled     = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:motion_enabled", "Allow OmaCritter to walk and jump", true);
+    packConfig.enabled           = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:enabled", "Draw Chameleon", true);
+    packConfig.motionEnabled     = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:motion_enabled", "Allow Chameleon to walk and jump", true);
     packConfig.themeAware        = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:theme_aware", "Inherit the host window's border colors", true);
-    packConfig.hideOnFullscreen  = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:hide_on_fullscreen", "Hide OmaCritter in true fullscreen", true);
+    packConfig.hideOnFullscreen  = makeShared<Config::Values::CBoolValue>("plugin:omaframes:critter:hide_on_fullscreen", "Hide Chameleon in true fullscreen", true);
     packConfig.size              = makeShared<Config::Values::CIntValue>(
-        "plugin:omaframes:critter:size", "OmaCritter size in logical pixels", 30, Config::Values::SIntValueOptions{.min = 16, .max = 64});
+        "plugin:omaframes:critter:size", "Chameleon size in logical pixels", 30, Config::Values::SIntValueOptions{.min = 16, .max = 64});
     packConfig.walkSpeed         = makeShared<Config::Values::CIntValue>(
-        "plugin:omaframes:critter:walk_speed", "OmaCritter walking speed in logical pixels per second", 44, Config::Values::SIntValueOptions{.min = 8, .max = 240});
+        "plugin:omaframes:critter:walk_speed", "Chameleon walking speed in logical pixels per second", 44, Config::Values::SIntValueOptions{.min = 8, .max = 240});
     packConfig.jumpIntervalMs    = makeShared<Config::Values::CIntValue>(
         "plugin:omaframes:critter:jump_interval_ms", "Average time between inter-window jumps", 12000,
         Config::Values::SIntValueOptions{.min = 1500, .max = 60000});
-    packConfig.bodyColor         = makeShared<Config::Values::CColorValue>("plugin:omaframes:critter:col.body", "OmaCritter body color", 0xff68c66b);
-    packConfig.accentColor       = makeShared<Config::Values::CColorValue>("plugin:omaframes:critter:col.accent", "OmaCritter accent color", 0xffd2d77d);
+    packConfig.bodyColor         = makeShared<Config::Values::CColorValue>("plugin:omaframes:critter:col.body", "Chameleon body color", 0xff68c66b);
+    packConfig.accentColor       = makeShared<Config::Values::CColorValue>("plugin:omaframes:critter:col.accent", "Chameleon accent color", 0xffd2d77d);
 
     HyprlandAPI::addConfigValueV2(pluginHandle, packConfig.enabled);
     HyprlandAPI::addConfigValueV2(pluginHandle, packConfig.motionEnabled);

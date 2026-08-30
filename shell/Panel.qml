@@ -236,8 +236,8 @@ Panel {
 
         Toggle {
           width: parent.width
-          label: "OmaCritter"
-          description: "A tiny gecko that walks and jumps between windows"
+          label: "Chameleon"
+          description: "Changes with window focus and themes as it walks and jumps"
           checked: omaframes.critterEnabled
           hasCursor: root.cursorActive && root.selectedIndex === 2
           enabled: omaframes.loaded && !omaframes.busy

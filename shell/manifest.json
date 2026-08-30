@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "OmaFrames",
-    "description": "Load the native host and toggle Vines or OmaCritter.",
+    "description": "Load the native host and toggle Vines or Chameleon.",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right",
