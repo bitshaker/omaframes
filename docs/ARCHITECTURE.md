@@ -50,9 +50,16 @@ Native decorations handle the compositor mechanics:
 - damage the correct area when geometry changes;
 - avoid a separate overlay surface for every client.
 
-The Vines renderer currently draws a rounded stem border, simple leaf pills,
-and buds. These shapes prove the lifecycle and rendering path before richer
-geometry and animation are ported from the QML study.
+The Vines renderer currently draws a segmented perimeter stem, simple leaf
+pills, and buds. Each decoration owns a monotonic growth clock. A compositor tick
+damages only the decoration while active; the stem advances clockwise around
+four perimeter segments and each leaf or bud sprouts after the stem reaches its
+position. Hyprland's standard border is never replaced.
+
+Theme-aware mode reads the window's already-resolved `m_realBorderColor`
+gradient during rendering. That means active/inactive transitions, window-rule
+colors, and Omarchy theme reloads reach the pack through Hyprland itself. Pack
+colors remain available as explicit overrides when theme-aware mode is off.
 
 Hyprland's plugin ABI is unstable. The `.so` must be rebuilt for the exact
 installed Hyprland version. Distribution will need HyprPM commit pins for each
@@ -78,8 +85,10 @@ The likely production split is:
 - **P1 — underway:** core geometry/state cases and five simultaneous windows
   pass. Remaining work includes active-window rules, size-aware detail,
   mixed-monitor scaling, and a longer damage/performance soak.
-- **P2:** replace the native pills with organic perimeter curves and staged
-  growth; profile GPU and damage cost.
+- **P2 — underway:** staged native growth, sprouting, motion disablement, and
+  live theme inheritance pass. Replace the pills and straight perimeter
+  segments with organic curves, add restrained idle motion, and profile GPU and
+  damage cost.
 - **P3:** add a second pack to validate the interface, then build the
   Quickshell settings/preview companion and an IPC spike.
 - **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions,

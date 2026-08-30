@@ -42,7 +42,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     }
 
     HyprlandAPI::addNotification(pluginHandle, "[omaframes] Vines pack loaded", CHyprColor{0.35, 0.85, 0.42, 1.0}, 3500);
-    return {"omaframes", "Extensible living window decorations; includes Vines", "OmaFrames contributors", "0.2.0-prototype"};
+    return {"omaframes", "Extensible living window decorations; includes Vines", "OmaFrames contributors", "0.3.0-prototype"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {

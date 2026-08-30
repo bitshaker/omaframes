@@ -26,8 +26,9 @@ Prototype only. The QML study has been linted and rendered. The native plugin
 has been compiled and live-tested against Hyprland 0.56.2. Existing and newly
 opened windows, HiDPI rendering, floating move/resize, maximize/fullscreen,
 workspace movement, live settings, five concurrent Foot windows, repeated
-load/unload, and clean decoration removal have passed. Mixed-monitor and
-long-running performance tests remain.
+load/unload, and clean decoration removal have passed. Native clockwise growth,
+staged sprouts, motion disablement, and live Solitude ↔ Hackerman theme changes
+also pass. Mixed-monitor and long-running performance tests remain.
 
 ## Effect packs
 
@@ -78,7 +79,15 @@ make -C native
 The output is `native/omaframes-native.so`. It checks the running Hyprland hash
 during initialization and refuses to load against mismatched headers.
 
+Vines grows clockwise once when it attaches to a window. Hyprland's normal
+border stays in place while the effect renders outside it. By default, the
+stem, leaves, and buds derive from each window's resolved border gradient, so
+active/inactive state, window rules, and Omarchy theme changes flow through
+without parsing theme files.
+
 ![Native OmaFrames Vines decoration around a Foot test window](docs/native-foot-test.png)
+
+![Native Vines growth: beginning, midpoint, and complete](docs/native-growth-test.png)
 
 The compositor test matrix is documented in
 [the live-test report](docs/LIVE_TEST.md).
@@ -102,6 +111,9 @@ The Vines pack exposes these runtime values:
 
 ```text
 plugin:omaframes:vines:enabled
+plugin:omaframes:vines:animation_enabled
+plugin:omaframes:vines:growth_duration_ms
+plugin:omaframes:vines:theme_aware
 plugin:omaframes:vines:stem_thickness
 plugin:omaframes:vines:extent
 plugin:omaframes:vines:leaf_size
@@ -115,7 +127,12 @@ Hyprland 0.56 uses the Lua config API for transient changes. For example:
 ```bash
 hyprctl eval 'hl.config({ plugin = { omaframes = { vines = { enabled = false } } } })'
 hyprctl eval 'hl.config({ plugin = { omaframes = { vines = { enabled = true } } } })'
+hyprctl eval 'hl.config({ plugin = { omaframes = { vines = { animation_enabled = false } } } })'
 ```
+
+`theme_aware` defaults to `true`. Set it to `false` to use the explicit
+`col.stem`, `col.leaf`, and `col.bud` values instead. `growth_duration_ms`
+defaults to 1800 and accepts 100–15000 milliseconds.
 
 ## Verification
 

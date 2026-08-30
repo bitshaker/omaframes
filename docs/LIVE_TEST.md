@@ -13,6 +13,22 @@ active window reported `OmaFrames: Vines` at priority 9980. The nested
 `hl.config`, proving the pack namespace is live. Unload removed both the plugin
 and decoration, with no Hyprland config errors before or after cleanup.
 
+The animated, theme-aware prototype was then tested as version
+`0.3.0-prototype`. A centered floating Foot window retained Hyprland's standard
+border while the Vines stem advanced clockwise from the top edge through the
+right, bottom, and left edges. Leaves and buds appeared only after the stem
+reached their perimeter positions. The default 1800 ms duration and a slowed
+12000 ms diagnostic run both completed without stalling the compositor.
+
+![Native growth at the beginning, midpoint, and completed state](native-growth-test.png)
+
+With animation disabled to isolate color behavior, the same live Foot window
+was captured under Solitude, Hackerman, and Solitude again. Vines followed the
+resolved gray and green window-border palettes immediately, and the restored
+Solitude frame matched the first capture.
+
+![Theme inheritance under Solitude, Hackerman, and restored Solitude](native-theme-test.png)
+
 ![OmaFrames Vines rendered around a controlled Foot window](native-foot-test.png)
 
 ## Passed
@@ -29,6 +45,11 @@ and decoration, with no Hyprland config errors before or after cleanup.
 | Attachment to a Foot window opened after load | Pass |
 | Runtime option registration | Pass |
 | Stem, leaves, and buds visible in the compositor | Pass |
+| Per-window clockwise stem growth | Pass |
+| Leaves and buds staged behind stem progress | Pass |
+| Standard Hyprland border retained | Pass |
+| Runtime animation disable | Pass |
+| Live Solitude → Hackerman → Solitude inheritance | Pass |
 | HiDPI scaling | Pass |
 | Tiled to floating transition | Pass |
 | Floating move and resize to 640×480 | Pass |
@@ -69,14 +90,18 @@ screen edge, so no vines remain visible and no corruption appears.
   an active-window-only mode.
 - Runtime controls must use Hyprland's Lua `hl.config(...)` API; the legacy
   `hyprctl keyword` path is unavailable with the Lua config provider.
+- A full-border render call cannot be progressively clipped in this path;
+  explicit perimeter segments provide a reliable prototype reveal.
 
 ## Still to test
 
 - multiple monitors and mixed monitor scales (only one monitor is connected);
 - a longer rapid move/resize and workspace-animation soak;
 - GPU/damage profiling and long-running many-window performance;
-- active-window-only and reduced-motion behavior, which are not implemented;
+- active-window-only behavior and integration with a host-wide reduced-motion
+  preference (the pack-level animation toggle works);
 - compositor upgrades and HyprPM compatibility pins.
 
-The plugin was unloaded after testing, the disposable Foot window was closed,
-and no Hyprland or Omarchy configuration was changed.
+The plugin was unloaded after testing, all disposable Foot windows and
+transient rules were removed, the theme was restored to Solitude, and no
+persistent Hyprland or Omarchy configuration file was changed.

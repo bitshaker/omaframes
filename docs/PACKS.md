@@ -37,6 +37,8 @@ Hyprland input. Final window-attached rendering remains native.
 
 ## Current pack: Vines
 
-Vines registers color and geometry controls, attaches one decoration per mapped
-window, and removes its custom render-pass elements during unload. Its QML pack
-contains the richer visual reference used to guide the native renderer.
+Vines registers color, geometry, theme, and motion controls; attaches one
+decoration per mapped window; and removes its custom render-pass elements
+during unload. Each decoration owns its initial growth state and inherits its
+window's resolved Hyprland border gradient by default. Its QML pack contains
+the richer visual reference used to guide the native renderer.

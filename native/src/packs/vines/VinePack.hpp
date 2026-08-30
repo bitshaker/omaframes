@@ -14,6 +14,9 @@ inline constexpr std::string_view PASS_NAME    = "COmaFramesVinesPassElement";
 
 struct SConfig {
     SP<Config::Values::CBoolValue>  enabled;
+    SP<Config::Values::CBoolValue>  animationEnabled;
+    SP<Config::Values::CBoolValue>  themeAware;
+    SP<Config::Values::CIntValue>   growthDurationMs;
     SP<Config::Values::CIntValue>   stemThickness;
     SP<Config::Values::CIntValue>   extent;
     SP<Config::Values::CIntValue>   leafSize;
