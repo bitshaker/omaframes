@@ -18,8 +18,10 @@ motion controls. See [the architecture notes](docs/ARCHITECTURE.md).
 ## Status
 
 Prototype only. The QML study has been linted and rendered. The native plugin
-has been compiled against Hyprland 0.56.2, but it has intentionally not been
-loaded into a live compositor session yet.
+has been compiled and live-tested against Hyprland 0.56.2. Attachment to both
+existing and newly opened windows, HiDPI rendering, repeated load/unload, and
+clean decoration removal have passed. Floating, fullscreen, multi-monitor, and
+performance testing remain.
 
 ## QML visual study
 
@@ -61,6 +63,11 @@ make -C native
 The output is `native/omavines-native.so`. The plugin checks the running
 Hyprland hash during initialization and refuses to load if it was built against
 different headers.
+
+![Native OmaVines decoration around the Foot test window](docs/native-foot-test.png)
+
+The first controlled compositor test is documented in
+[the live-test report](docs/LIVE_TEST.md).
 
 ### Optional live test
 

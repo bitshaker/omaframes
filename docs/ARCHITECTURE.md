@@ -54,10 +54,12 @@ iteration on the look and controls.
 
 ## Prototype roadmap
 
-- **P0 — complete here:** vector QML visual study and compile-checked native
-  decoration skeleton.
-- **P1:** live-test load/unload, confirm tiling/floating/fullscreen behavior,
-  active-window rules, multi-monitor scaling, and compositor damage.
+- **P0 — complete here:** vector QML visual study plus a native decoration that
+  compiles, loads, renders around a tiled HiDPI window, attaches to existing and
+  new windows, and unloads cleanly.
+- **P1 — underway:** confirm floating/fullscreen behavior, active-window rules,
+  multi-monitor scaling, window/workspace animation tracking, and compositor
+  damage under repeated movement and resizing.
 - **P2:** replace the native pills with an organic perimeter curve and staged
   growth animation; profile GPU and damage cost.
 - **P3:** add the Quickshell settings/preview companion and an IPC spike.
