@@ -118,6 +118,15 @@ boundary, the rail normal and wall pose flip inward while travel direction is
 preserved. Perched, landing, and airborne boxes are clamped to the monitor's
 logical bounds so HiDPI scaling cannot leave only part of the creature visible.
 
+Internal rails are also aware of dwindle occlusion without changing render
+layers. After constructing the normal outward actor box, an inactive tiled host
+compares that exact box with the active window's current animated box. The rail
+flips inward only when the active window is tiled on the same visible workspace
+and monitor and the two boxes overlap. Active hosts, floating active windows,
+and non-overlapping portions of adjacent rails stay outward. Focus-driven
+changes ease the one existing actor across the rail while damaging both its old
+and new boxes; no compositor-global perched pass is added.
+
 ## Rendering
 
 The initial gecko is asset-free and drawn as a small, readable silhouette in
@@ -175,6 +184,8 @@ recorder incident is documented in
 - One-window and zero-window workspaces are stable.
 - True fullscreen hides the actor and restoration returns it safely.
 - Maximized and edge-tiled windows keep the complete actor inside the monitor.
+- Inactive tiled hosts flip inward only where the active tiled window would
+  cover the actor; floating active windows and clear internal rails do not.
 - Runtime enable, reduced motion, size, speed, jump interval, and theme controls
   apply without a plugin reload.
 - The critter is click-through and does not reserve layout space.

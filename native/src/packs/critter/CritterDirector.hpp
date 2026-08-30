@@ -44,6 +44,13 @@ class CCritterDirector {
         COUNT,
     };
 
+    enum class EPlacement : uint8_t {
+        OUTWARD,
+        MONITOR_BOUNDARY_INWARD,
+        TILED_OCCLUSION_INWARD,
+        AIRBORNE,
+    };
+
     void start();
     void stop();
     void topologyChanged();
@@ -61,9 +68,11 @@ class CCritterDirector {
     struct SRailPoint {
         Vector2D contact;
         Vector2D center;
-        EEdge    edge     = EEdge::TOP;
-        double   fraction = 0;
-        bool     inward   = false;
+        EEdge      edge          = EEdge::TOP;
+        double     fraction      = 0;
+        EPlacement placement     = EPlacement::OUTWARD;
+        bool       inward       = false;
+        bool       transitioning = false;
     };
 
     struct SLanding {
@@ -73,12 +82,23 @@ class CCritterDirector {
 
     struct SActorState {
         CBox         box;
-        EEdge        edge     = EEdge::TOP;
-        EEdge        poseEdge = EEdge::TOP;
-        EPose        pose     = EPose::IDLE;
-        bool         forward  = true;
-        bool         inward   = false;
+        EEdge        edge          = EEdge::TOP;
+        EEdge        poseEdge      = EEdge::TOP;
+        EPose        pose          = EPose::IDLE;
+        bool         forward       = true;
+        bool         inward        = false;
+        bool         transitioning = false;
+        EPlacement   placement     = EPlacement::OUTWARD;
         PHLWINDOWREF paletteWindow;
+    };
+
+    struct SRailTransition {
+        PHLWINDOWREF      host;
+        EEdge             edge        = EEdge::TOP;
+        EPlacement        destination = EPlacement::OUTWARD;
+        double            fromFactor  = 1.0;
+        double            toFactor    = 1.0;
+        Clock::time_point started{};
     };
 
     bool                         eligible(PHLWINDOW window) const;
@@ -87,13 +107,13 @@ class CCritterDirector {
     std::vector<PHLWINDOW>       eligibleTargets(PHLWINDOW host) const;
     CBox                         windowRailBox(PHLWINDOW window) const;
     CBox                         monitorBox(PHLWINDOW window) const;
+    bool                         tiledActiveWindowOccludes(PHLWINDOW host, const CBox& outwardActorBox) const;
     double                       perimeterLength(const CBox& box) const;
-    SRailPoint                   railPoint(PHLWINDOW window, double perimeterPosition) const;
-    SRailPoint                   railPoint(PHLWINDOW window, const SLanding& landing) const;
+    SRailPoint                   railPoint(PHLWINDOW window, double perimeterPosition, Clock::time_point now, bool applyTransition = true) const;
+    SRailPoint                   railPoint(PHLWINDOW window, const SLanding& landing, Clock::time_point now, bool applyTransition = true) const;
     SLanding                     closestLanding(PHLWINDOW target, const Vector2D& source) const;
     double                       perimeterPosition(const CBox& box, const SLanding& landing) const;
     std::optional<SActorState>   actorState(Clock::time_point now) const;
-    std::optional<CBox>          actorBox(Clock::time_point now) const;
     void                         ensureHost(Clock::time_point now);
     void                         enterIdle(Clock::time_point now);
     void                         enterWalking(Clock::time_point now);
@@ -101,6 +121,8 @@ class CCritterDirector {
     void                         beginFlight(Clock::time_point now);
     void                         finishFlight(Clock::time_point now);
     void                         update(Clock::time_point now);
+    void                         updateRailTransition(Clock::time_point now);
+    void                         activeWindowChanged(PHLWINDOW active);
     void                         onTimer(SP<CEventLoopTimer> timer);
     void                         armTimer(Clock::time_point now);
     void                         damageActorTransition(const std::optional<CBox>& before, const std::optional<CBox>& after);
@@ -127,7 +149,10 @@ class CCritterDirector {
     Clock::time_point            m_phaseDeadline{};
     Clock::time_point            m_nextJump{};
     Clock::time_point            m_lastTick{};
-    std::optional<CBox>          m_lastActorBox;
+    std::optional<CBox>            m_lastActorBox;
+    std::optional<EPlacement>      m_lastPlacement;
+    std::optional<SRailTransition> m_railTransition;
+    PHLWINDOWREF                   m_activeWindowOverride;
     SP<CEventLoopTimer>          m_timer;
     std::mt19937_64              m_random{std::random_device{}()};
 
@@ -140,6 +165,7 @@ class CCritterDirector {
     CHyprSignalListener m_closeWindowListener;
     CHyprSignalListener m_moveWindowListener;
     CHyprSignalListener m_fullscreenListener;
+    CHyprSignalListener m_floatingListener;
     CHyprSignalListener m_workspaceListener;
     CHyprSignalListener m_monitorLayoutListener;
     CHyprSignalListener m_configListener;

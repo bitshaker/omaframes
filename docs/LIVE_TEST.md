@@ -241,3 +241,63 @@ A forced jump then sampled every visible actor box inside the output; the top
 of its arc stopped at `y=1`, landed on a Foot window, and settled normally.
 Transient settings were restored, the plugin unloaded cleanly, the user's
 windows were untouched, and Hyprland reported no config errors.
+
+## Dwindle occlusion-aware rail follow-up
+
+Date: 2026-08-30
+
+The occlusion rule was tested on a disposable workspace with two 701×850 Foot
+windows in Hyprland's side-by-side dwindle layout. Testing used Hyprland IPC and
+status sampling only; no screen recorder or video encoder was started.
+
+With the left window as the inactive host and the right tiled window active, an
+actor on the shared right rail moved from outward `x=710.6` to inward `x=685.4`
+and reported `placement="tiled-occlusion-inward"`. Focusing the host restored
+`placement="outward"`. Fast IPC traces captured both 180 ms crossings as a
+single actor moved through intermediate positions; the `transitioning` flag
+cleared at the destination and no second actor state appeared.
+
+A third Foot window was floated and left active. Its animated box overlapped
+the actor box at `x=710.6`, `y=514.991`, but the actor correctly remained
+outward. The tiled window behind the same rail was inactive and therefore did
+not affect placement. This confirmed that the decision uses the active
+window's floating state and the actor's actual rail position rather than broad
+window adjacency.
+
+A forced jump from the active left window to the inactive right window reported
+`destinationPlacement="tiled-occlusion-inward"` throughout flight. The landing
+pose settled on the destination's shared left rail with the same placement
+reason. All 18 crouch, flight, landing, and idle samples contained one visible
+actor, and every sampled box stayed inside the 1440×900 logical output.
+
+The existing output-boundary behavior was retested on the right window's outer
+rail. Status reported `placement="monitor-boundary-inward"` at
+`x=1400.4`, and the complete 30-pixel actor box remained within the logical
+monitor. Normal internal placement, tiled occlusion, and monitor clipping are
+now independently visible through `hyprctl -j omaframes status` as `outward`,
+`tiled-occlusion-inward`, and `monitor-boundary-inward`; airborne status also
+reports its destination placement.
+
+The complete offline check passed, including QML lint, Omarchy shell-plugin
+validation, a clean C++23 build, and export checks. Product-default runtime
+values were restored, all three disposable Foot windows were closed, workspace
+1 and the original ChatGPT focus were restored, and the plugin unloaded with
+its control command removed. No plugins remained loaded and Hyprland reported
+no configuration errors.
+
+### Occlusion-aware results
+
+| Check | Result |
+|---|---|
+| Inactive host under active tiled overlap flips inward | Pass |
+| Exact actor-box intersection rather than broad adjacency | Pass |
+| Active host restores outward placement | Pass |
+| Active floating overlap remains outward | Pass |
+| Non-occluded internal placement remains outward | Pass |
+| Walking, idle, landing, and jump destination classification | Pass |
+| Smooth focus transitions with one actor and bounded damage | Pass |
+| Existing monitor-boundary inward placement and bounds | Pass |
+| Forced jump and focus changes leave one actor | Pass |
+| Complete offline check | Pass |
+| Transient settings, windows, workspace, focus, and unload cleanup | Pass |
+| Hyprland config errors after cleanup | None |
