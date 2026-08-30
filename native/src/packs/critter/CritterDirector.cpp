@@ -6,6 +6,7 @@
 #include <limits>
 #include <numbers>
 #include <ranges>
+#include <sstream>
 
 #include <cairo/cairo.h>
 #include <hyprland/src/desktop/state/FocusState.hpp>
@@ -232,6 +233,27 @@ double distanceSquared(const Vector2D& first, const Vector2D& second) {
     const double y = first.y - second.y;
     return x * x + y * y;
 }
+
+std::string_view phaseName(const CCritterDirector::EPhase phase) {
+    switch (phase) {
+        case CCritterDirector::EPhase::HIDDEN: return "hidden";
+        case CCritterDirector::EPhase::IDLE: return "idle";
+        case CCritterDirector::EPhase::WALKING: return "walking";
+        case CCritterDirector::EPhase::CROUCHING: return "crouching";
+        case CCritterDirector::EPhase::AIRBORNE: return "airborne";
+        case CCritterDirector::EPhase::LANDING: return "landing";
+    }
+    return "unknown";
+}
+
+std::string windowAddress(PHLWINDOW window) {
+    if (!window)
+        return "null";
+
+    std::ostringstream stream;
+    stream << "0x" << std::hex << reinterpret_cast<uintptr_t>(window.get());
+    return stream.str();
+}
 }
 
 CCritterDirector& director() {
@@ -304,6 +326,80 @@ double CCritterDirector::decorationExtent() const {
     if (!config().size)
         return 22;
     return std::ceil(static_cast<double>(config().size->value()) * 0.62);
+}
+
+std::string CCritterDirector::status(const bool json) const {
+    const auto now    = Clock::now();
+    const auto host   = m_host.lock();
+    const auto target = m_target.lock();
+    const auto actor  = actorState(now);
+    const auto targets = eligibleTargets(host).size();
+
+    std::ostringstream stream;
+    if (json) {
+        stream << "{\"started\":" << (m_started ? "true" : "false") << ",\"enabled\":"
+               << (config().enabled->value() ? "true" : "false") << ",\"motionEnabled\":"
+               << (config().motionEnabled->value() ? "true" : "false") << ",\"phase\":\"" << phaseName(m_phase)
+               << "\",\"host\":\"" << windowAddress(host) << "\",\"target\":\"" << windowAddress(target)
+               << "\",\"eligibleTargets\":" << targets << ",\"actorVisible\":" << (actor ? "true" : "false");
+        if (actor)
+            stream << ",\"actor\":{\"x\":" << actor->box.x << ",\"y\":" << actor->box.y << ",\"size\":" << actor->box.width << "}";
+        stream << "}\n";
+        return stream.str();
+    }
+
+    stream << "phase=" << phaseName(m_phase) << " host=" << windowAddress(host) << " target=" << windowAddress(target)
+           << " eligible_targets=" << targets << " actor_visible=" << (actor ? "true" : "false");
+    if (actor)
+        stream << " actor_x=" << actor->box.x << " actor_y=" << actor->box.y << " actor_size=" << actor->box.width;
+    stream << '\n';
+    return stream.str();
+}
+
+bool CCritterDirector::forceJump(std::string& error) {
+    if (!m_started || !config().enabled->value()) {
+        error = "OmaCritter is not enabled";
+        return false;
+    }
+    if (!config().motionEnabled->value()) {
+        error = "OmaCritter motion is disabled";
+        return false;
+    }
+
+    const auto active = Desktop::focusState()->window();
+    if (!eligible(active)) {
+        error = "the active window is not an eligible host";
+        return false;
+    }
+    if (eligibleTargets(active).empty()) {
+        error = "the active window has no eligible target on its workspace and monitor";
+        return false;
+    }
+
+    const auto now      = Clock::now();
+    const auto previous = m_lastActorBox;
+    m_host              = active;
+    m_target.reset();
+    m_flightMonitor.reset();
+    m_phase             = EPhase::IDLE;
+    m_phaseStarted      = now;
+    m_phaseDeadline     = now;
+    m_nextJump          = now;
+    m_lastTick          = now;
+    m_direction         = randomValue() % 2U == 0 ? -1 : 1;
+    m_perimeterPosition = windowRailBox(active).width * 0.68;
+    beginCrouch(now);
+
+    if (m_phase != EPhase::CROUCHING) {
+        error = "OmaCritter could not select a target";
+        return false;
+    }
+
+    const auto current = actorBox(now);
+    damageActorTransition(previous, current);
+    m_lastActorBox = current;
+    armTimer(now);
+    return true;
 }
 
 bool CCritterDirector::eligible(PHLWINDOW window) const {

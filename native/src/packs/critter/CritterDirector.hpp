@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <random>
+#include <string>
 #include <vector>
 
 #include <hyprland/src/desktop/DesktopTypes.hpp>
@@ -49,6 +50,8 @@ class CCritterDirector {
     void windowUpdated(PHLWINDOW window);
     void queueWindowPass(PHLWINDOW window, PHLMONITOR monitor, float alpha);
     void drawPass(PHLMONITOR monitor, PHLWINDOWREF window, bool flight, float alpha);
+    std::string status(bool json) const;
+    bool        forceJump(std::string& error);
 
     double decorationExtent() const;
 

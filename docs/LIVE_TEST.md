@@ -144,26 +144,77 @@ The plugin was unloaded after testing, all disposable Foot windows were
 removed, the theme was restored to the user's starting theme, and no persistent
 Hyprland or Omarchy configuration file was edited manually.
 
-## OmaCritter partial live test
+## OmaCritter live test
 
 Date: 2026-08-30
 
 OmaFrames `0.5.0-prototype` loaded against the same Hyprland 0.56.2 commit. The
 pack registry attached one `OmaFrames: Vines` decoration at priority 9980 and
 one `OmaFrames: OmaCritter` decoration at priority 9970 to the existing ChatGPT
-window and two Foot windows opened after load. No config errors appeared.
+window and two Foot windows opened after load. No config errors appeared. The
+perimeter walker was also confirmed directly on-screen rather than inferred
+only from compositor state.
 
 Transient Lua configuration changed jump interval, walk speed, size, palette,
 and reduced-motion state. The critter parked when motion was disabled and
-resumed when re-enabled. A high-contrast 64-pixel diagnostic gecko rendered on
-a shared tiled edge; the normal product default remains 30 logical pixels.
+resumed when re-enabled. A high-contrast diagnostic gecko rendered on a shared
+tiled edge; the normal product default remains 30 logical pixels.
 
 ![OmaCritter rendered on a tiled window edge at 2× scale](native-critter-live-test.png)
 
-The test then attempted a full-screen recording. The AMD VCE encode ring timed
-out in `gpu-screen-recorder`, the ChatGPT GPU process dumped core, GPU recovery
-failed, and the graphical session could not be restored without rebooting. The
-journal timeline points to the video encoder as the initiating failure, but the
-plugin was loaded in-process and the remaining flight, fullscreen, recovery,
-and unload cases are still unverified. See the full
-[incident report](INCIDENT_2026-08-30.md).
+The initial run then attempted a full-screen recording. The AMD VCE encode ring
+timed out in `gpu-screen-recorder`, the ChatGPT GPU process dumped core, GPU
+recovery failed, and the graphical session could not be restored without
+rebooting. The journal timeline points to the video encoder as the initiating
+failure. See the full [incident report](INCIDENT_2026-08-30.md).
+
+Follow-up testing after reboot used only Hyprland IPC, state sampling, and one
+still image; the video recorder was not run again. A new `hyprctl omaframes`
+diagnostic command exposed the phase, host, target, eligible-target count,
+visibility, and actor box, plus a deterministic `jump` action that enters the
+normal crouch/flight/landing state machine.
+
+A 50 ms trace of one forced jump observed five crouching samples, nine airborne
+samples, four landing samples, and a settled idle state. During flight the
+actor's vertical coordinate traced the expected arc and ownership transferred
+between adjacent Foot windows without a duplicate or missing settled actor.
+
+The destination Foot process was then terminated during the airborne phase.
+The target reference cleared, the actor returned to walking on the surviving
+host, and Hyprland remained responsive. True fullscreen produced a hidden
+phase with no actor and restoration rehomed it safely. Switching to an empty
+workspace did the same, then returning to workspace 1 restored the actor.
+
+With motion disabled, the actor parked on the active Foot window and the
+diagnostic jump correctly refused to start. It resumed and completed a jump
+after motion was re-enabled. Runtime `enabled=false` hid the actor and
+`enabled=true` restored it. While parked, tile → float → resize → tile
+changed the actor box with the live window geometry. A 12-jump state-polled soak
+then completed every flight and left the compositor responsive.
+
+Finally, transient settings were restored to product defaults, the disposable
+Foot window was closed, and the plugin was unloaded while its animation timer
+was active. Both OmaFrames decorations disappeared, the diagnostic command was
+unregistered, the plugin list was empty, and Hyprland reported no config
+errors.
+
+### OmaCritter results
+
+| Check | Result |
+|---|---|
+| Visible perimeter walking on live tiled windows | Pass |
+| Exactly one actor across three decorated windows | Pass |
+| Crouch → airborne arc → landing → ownership transfer | Pass |
+| Destination window closed while airborne | Pass |
+| One-window stability and safe refusal without a target | Pass |
+| Zero-window workspace hide and restoration | Pass |
+| True fullscreen hide and restoration | Pass |
+| Tiled, floating, resized, and restored geometry tracking | Pass |
+| Reduced-motion park, refusal, and resume | Pass |
+| Runtime disable and re-enable | Pass |
+| Live size, speed, interval, palette, and theme settings | Pass |
+| Twelve consecutive deterministic jumps | Pass |
+| Timer, decorations, render passes, and command removed on unload | Pass |
+| Hyprland config errors after cleanup | None |
+| Mixed-monitor and mixed-scale behavior | Not tested; one monitor connected |
+| Long-running GPU/damage profiling | Not yet tested |

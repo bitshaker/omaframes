@@ -149,10 +149,14 @@ plugin:omaframes:critter:col.accent
 5. Add inter-window target selection and the post-window flight pass.
 6. Exercise the full live-test matrix and document remaining limitations.
 
-Stages 1–5 are implemented. Stage 6 is incomplete: registration, existing/new
-window attachment, runtime settings, reduced-motion toggling, and one perched
-2× render passed. The extended test was interrupted by the GPU recorder
-incident documented in [INCIDENT_2026-08-30.md](INCIDENT_2026-08-30.md).
+Stages 1–5 are implemented. The single-monitor portion of stage 6 is complete:
+registration, existing/new window attachment, visible perimeter walking,
+runtime settings, forced and natural state transitions, reduced motion,
+floating geometry changes, fullscreen and empty-workspace recovery, target
+closure during flight, repeated jumps, and clean unload all passed at 2×.
+Mixed-monitor and long-running performance work remains. The unrelated GPU
+recorder incident is documented in
+[INCIDENT_2026-08-30.md](INCIDENT_2026-08-30.md).
 
 ## Acceptance criteria
 

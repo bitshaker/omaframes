@@ -33,10 +33,12 @@ performance tests remain.
 
 OmaCritter passes the deterministic QML study, clean native build, ABI guard,
 plugin registration, attachment to existing/new windows, runtime configuration,
-and a 2× live render. The extended motion test was interrupted by an AMD GPU
-reset triggered when `gpu-screen-recorder` started; it did not establish a
-plugin crash. See [the incident report](docs/INCIDENT_2026-08-30.md) before
-running another live test.
+and a 2× live render. Recorder-free follow-up testing also passed visible
+perimeter walking, deterministic jumps, closing a destination mid-flight,
+floating resize, empty-workspace and fullscreen recovery, reduced motion,
+runtime disable/re-enable, a 12-jump soak, and clean unload. Mixed-monitor and
+long-running performance tests remain. The separate AMD encoder incident is
+documented in [the incident report](docs/INCIDENT_2026-08-30.md).
 
 ## Effect packs
 
@@ -174,6 +176,19 @@ plugin:omaframes:critter:col.accent
 
 The defaults are a 30-pixel gecko, 44 logical pixels/second walking speed, and
 roughly 12 seconds between jump opportunities.
+
+While the plugin is loaded, its small diagnostic command reports the single
+actor's live state and can request a jump through the normal state machine:
+
+```bash
+hyprctl omaframes status
+hyprctl -j omaframes status
+hyprctl omaframes jump
+```
+
+`jump` is intended for testing. It requires motion to be enabled, an eligible
+active window, and at least one destination on the same visible workspace and
+monitor. The command is unregistered when the plugin unloads.
 
 ## Verification
 

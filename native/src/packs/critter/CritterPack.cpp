@@ -1,6 +1,8 @@
 #include "CritterPack.hpp"
 
 #include <ranges>
+#include <string>
+#include <string_view>
 
 #include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/render/Renderer.hpp>
@@ -12,6 +14,37 @@
 namespace OmaFrames::Packs::Critter {
 namespace {
 SConfig packConfig;
+SP<SHyprCtlCommand> controlCommand;
+
+std::string_view trim(const std::string_view value) {
+    const auto first = value.find_first_not_of(" \t\r\n");
+    if (first == std::string_view::npos)
+        return {};
+    const auto last = value.find_last_not_of(" \t\r\n");
+    return value.substr(first, last - first + 1);
+}
+
+std::string runControlCommand(const eHyprCtlOutputFormat format, const std::string arguments) {
+    constexpr std::string_view COMMAND = "omaframes";
+
+    auto action = trim(arguments);
+    if (action.starts_with(COMMAND) &&
+        (action.size() == COMMAND.size() || std::string_view{" \t\r\n"}.contains(action[COMMAND.size()])))
+        action = trim(action.substr(COMMAND.size()));
+    if (action.empty() || action == "status")
+        return director().status(format == FORMAT_JSON);
+
+    if (action == "jump") {
+        std::string error;
+        const bool  started = director().forceJump(error);
+        if (format == FORMAT_JSON)
+            return started ? "{\"success\":true}\n" : "{\"success\":false,\"error\":\"" + error + "\"}\n";
+        return started ? "ok\n" : "error: " + error + "\n";
+    }
+
+    return format == FORMAT_JSON ? "{\"success\":false,\"error\":\"usage: hyprctl omaframes [status|jump]\"}\n"
+                                 : "usage: hyprctl omaframes [status|jump]\n";
+}
 }
 
 SConfig& config() {
@@ -46,6 +79,11 @@ void registerConfig() {
 
 void start() {
     director().start();
+    controlCommand = HyprlandAPI::registerHyprCtlCommand(pluginHandle, SHyprCtlCommand{
+                                                                           .name  = "omaframes",
+                                                                           .exact = false,
+                                                                           .fn    = runControlCommand,
+                                                                       });
 }
 
 void attach(PHLWINDOW window) {
@@ -58,6 +96,10 @@ void attach(PHLWINDOW window) {
 }
 
 void stop() {
+    if (controlCommand) {
+        HyprlandAPI::unregisterHyprCtlCommand(pluginHandle, controlCommand);
+        controlCommand.reset();
+    }
     director().stop();
     g_pHyprRenderer->m_renderPass.removeAllOfType(PASS_NAME.data());
 }
