@@ -20,8 +20,10 @@ motion controls. See [the architecture notes](docs/ARCHITECTURE.md).
 Prototype only. The QML study has been linted and rendered. The native plugin
 has been compiled and live-tested against Hyprland 0.56.2. Attachment to both
 existing and newly opened windows, HiDPI rendering, repeated load/unload, and
-clean decoration removal have passed. Floating, fullscreen, multi-monitor, and
-performance testing remain.
+clean decoration removal have passed. Floating move/resize, maximized and true
+fullscreen transitions, workspace movement, live settings, and five concurrent
+Foot windows have also passed. Mixed-monitor and long-running performance tests
+remain.
 
 ## QML visual study
 
@@ -94,6 +96,13 @@ plugin:omavines:leaf_size
 plugin:omavines:col.stem
 plugin:omavines:col.leaf
 plugin:omavines:col.bud
+```
+
+Hyprland 0.56 uses the Lua config API for transient changes. For example:
+
+```bash
+hyprctl eval 'hl.config({ plugin = { omavines = { enabled = false } } })'
+hyprctl eval 'hl.config({ plugin = { omavines = { enabled = true } } })'
 ```
 
 ## Verification
