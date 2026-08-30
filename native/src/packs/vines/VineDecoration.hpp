@@ -1,9 +1,11 @@
 #pragma once
 
+// Native decoration supplied by the OmaFrames Vines pack.
 #define WLR_USE_UNSTABLE
 
 #include <hyprland/src/render/decorations/IHyprWindowDecoration.hpp>
 
+namespace OmaFrames::Packs::Vines {
 class CVineDecoration : public IHyprWindowDecoration {
   public:
     explicit CVineDecoration(PHLWINDOW window);
@@ -32,3 +34,4 @@ class CVineDecoration : public IHyprWindowDecoration {
 
     friend class CVinePassElement;
 };
+}

@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "packs/vines" as Vines
 
 Rectangle {
     id: root
@@ -60,7 +61,7 @@ Rectangle {
         spacing: 5
 
         Text {
-            text: "OMAVINES / VISUAL STUDY 01"
+            text: "OMAFRAMES / VINES / STUDY 01"
             color: "#8ccf82"
             font.pixelSize: 13
             font.letterSpacing: 2.4
@@ -223,7 +224,7 @@ Rectangle {
                     }
 
                     Text {
-                        text: "The QML layer owns timing, color, leaves and controls.\nThe native layer will own exact window geometry and compositor rendering."
+                        text: "The Vines pack owns its shapes, color and motion.\nOmaFrames supplies the window lifecycle and compositor bridge."
                         color: "#9caf9f"
                         font.family: "monospace"
                         font.pixelSize: 13
@@ -233,7 +234,7 @@ Rectangle {
             }
         }
 
-        VineFrame {
+        Vines.VineFrame {
             id: vines
 
             x: sampleWindow.x - 48

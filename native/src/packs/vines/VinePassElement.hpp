@@ -1,7 +1,11 @@
 #pragma once
 
+// Render-pass adapter supplied by the OmaFrames Vines pack.
 #include <hyprland/src/render/pass/PassElement.hpp>
 
+#include "VinePack.hpp"
+
+namespace OmaFrames::Packs::Vines {
 class CVineDecoration;
 
 class CVinePassElement : public IPassElement {
@@ -19,7 +23,7 @@ class CVinePassElement : public IPassElement {
     bool                          needsPrecomputeBlur() override;
 
     const char* passName() override {
-        return "CVinePassElement";
+        return PASS_NAME.data();
     }
 
     ePassElementType type() override {
@@ -29,3 +33,4 @@ class CVinePassElement : public IPassElement {
   private:
     SData m_data;
 };
+}

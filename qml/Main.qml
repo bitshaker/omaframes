@@ -8,7 +8,7 @@ ApplicationWindow {
     minimumHeight: 620
     visible: true
     color: "#07100c"
-    title: "OmaVines — QML visual study"
+    title: "OmaFrames — Vines visual study"
 
     Study {
         anchors.fill: parent

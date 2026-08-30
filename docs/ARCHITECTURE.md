@@ -1,68 +1,86 @@
 # Architecture notes
 
-OmaVines is exploring a hybrid design because the two halves of the effect have
-very different jobs.
+OmaFrames is a hybrid effect engine. The compositor-facing host, visual effect
+packs, and eventual QML companion have deliberately different jobs.
+
+## OmaFrames host
+
+The native host is intentionally small. It checks Hyprland ABI compatibility,
+listens for new windows, walks existing windows during startup, and delegates
+registration, attachment, and cleanup to each built-in pack.
+
+This keeps Hyprland lifecycle code shared while letting effects evolve
+independently. The current host compiles packs into one plugin; dynamic external
+pack loading can wait until the pack API and compatibility story are mature.
+
+## Effect packs
+
+An effect pack owns its renderer, settings, display name, and render-pass
+cleanup. `vines` is the first implementation. Both halves use a matching path:
+
+```text
+qml/packs/vines/
+native/src/packs/vines/
+```
+
+The native Vines entry point exposes a minimal lifecycle—register configuration,
+attach to a window, and unload. The QML directory exposes visual components for
+the preview study. See [PACKS.md](PACKS.md) for the current contract.
 
 ## QML companion
 
-QML is a good fit for the visual language and eventual settings surface:
+QML is a good fit for visual exploration and the eventual settings surface:
 
-- animate a path from zero to full length;
-- compose vector stems, leaves, buds, color palettes, and subtle motion;
-- build controls and previews quickly;
-- run as an Omarchy/Quickshell companion without taking window input.
+- animate paths from zero to full length;
+- compose vector shapes, palettes, and subtle motion;
+- build pack previews and controls quickly;
+- provide accessibility options such as reduced motion.
 
-The current QML prototype is a standalone visual study around a simulated
-window. It deliberately does not claim to track a real Hyprland window yet.
-`ShapePath.trim` is used for the growth reveal, which currently requires Qt
-6.10 or newer.
+The current QML app is a standalone Vines study around a simulated window. It
+does not track a real Hyprland window. `ShapePath.trim` provides the growth
+reveal and currently requires Qt 6.10 or newer.
 
-## Native Hyprland decoration
+## Native Hyprland plugin
 
-A native decoration is a good fit for the compositor-facing mechanics:
+Native decorations handle the compositor mechanics:
 
-- attach to every mapped window and future windows;
-- receive exact position, size, rounding, workspace animation, and monitor scale;
-- draw in the compositor's decoration pass;
-- damage the correct area as a window moves or changes size;
-- avoid a separate overlay surface per client.
+- attach to existing and future mapped windows;
+- receive exact size, rounding, workspace animation, and monitor scale;
+- draw in Hyprland's decoration pass;
+- damage the correct area when geometry changes;
+- avoid a separate overlay surface for every client.
 
-The current native prototype renders a rounded stem border, simple leaf pills,
-and buds. The shapes are intentionally basic. Its purpose is to prove the
-attachment and rendering path before reproducing the richer QML design.
+The Vines renderer currently draws a rounded stem border, simple leaf pills,
+and buds. These shapes prove the lifecycle and rendering path before richer
+geometry and animation are ported from the QML study.
 
-Hyprland's plugin ABI is unstable. The native `.so` must be rebuilt for the
-exact installed Hyprland version, and a distributable repository will need
-HyprPM commit pins for supported releases.
+Hyprland's plugin ABI is unstable. The `.so` must be rebuilt for the exact
+installed Hyprland version. Distribution will need HyprPM commit pins for each
+supported release.
 
 ## Intended bridge
 
 The likely production split is:
 
-1. The native plugin owns per-window geometry, visibility, animation state, and
-   final compositor rendering.
-2. A Quickshell/QML companion owns palette editing, animation controls, preview,
-   and accessibility options such as reduced motion.
-3. The companion sends a small settings/state model to the native plugin. The
-   transport is still open; a Unix socket or a tiny command dispatcher are the
-   leading options.
-4. Omarchy packaging installs and starts both pieces as one user-facing plugin.
-
-Keeping the final vines native avoids the synchronization errors of a
-screen-sized QML overlay, while keeping the companion in QML preserves fast
-iteration on the look and controls.
+1. The native host owns Hyprland compatibility, window lifecycle, geometry,
+   visibility, and final compositor rendering.
+2. Packs own their visual code, settings schema, animation state, and preview.
+3. A Quickshell/QML companion provides pack selection, palette editing,
+   animation controls, previews, and accessibility options.
+4. The companion sends a small settings model to the native host. A Unix socket
+   or tiny command dispatcher are the leading transport options.
+5. Omarchy packaging installs and starts the host and companion as one plugin.
 
 ## Prototype roadmap
 
-- **P0 — complete here:** vector QML visual study plus a native decoration that
-  compiles, loads, renders around a tiled HiDPI window, attaches to existing and
-  new windows, and unloads cleanly.
-- **P1 — underway:** floating move/resize, maximized/fullscreen, workspace
-  movement, live settings, and five simultaneous windows now pass. Remaining
-  work includes active-window rules, size-aware detail reduction, mixed-monitor
-  scaling, and a longer compositor damage/performance soak.
-- **P2:** replace the native pills with an organic perimeter curve and staged
-  growth animation; profile GPU and damage cost.
-- **P3:** add the Quickshell settings/preview companion and an IPC spike.
-- **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions, and
-  compatibility CI.
+- **P0 — complete:** QML Vines study plus a native decoration that builds,
+  loads, attaches to existing and new windows, renders on HiDPI, and unloads.
+- **P1 — underway:** core geometry/state cases and five simultaneous windows
+  pass. Remaining work includes active-window rules, size-aware detail,
+  mixed-monitor scaling, and a longer damage/performance soak.
+- **P2:** replace the native pills with organic perimeter curves and staged
+  growth; profile GPU and damage cost.
+- **P3:** add a second pack to validate the interface, then build the
+  Quickshell settings/preview companion and an IPC spike.
+- **P4:** add Omarchy/HyprPM packaging, release pins, recovery instructions,
+  and compatibility CI.

@@ -9,15 +9,16 @@
 #include <hyprland/src/render/Renderer.hpp>
 
 #include "VinePassElement.hpp"
-#include "globals.hpp"
+#include "VinePack.hpp"
 
 using namespace Render::GL;
 
+namespace OmaFrames::Packs::Vines {
 namespace {
 constexpr uint8_t ALL_EDGES = DECORATION_EDGE_BOTTOM | DECORATION_EDGE_LEFT | DECORATION_EDGE_RIGHT | DECORATION_EDGE_TOP;
 
 double configuredExtent() {
-    return std::max<Config::INTEGER>(config.extent->value(), config.stemThickness->value());
+    return std::max<Config::INTEGER>(config().extent->value(), config().stemThickness->value());
 }
 
 CHyprColor withWindowAlpha(const CHyprColor& color, const float alpha) {
@@ -59,11 +60,11 @@ eDecorationLayer CVineDecoration::getDecorationLayer() {
 }
 
 std::string CVineDecoration::getDisplayName() {
-    return "OmaVines prototype";
+    return std::string(DISPLAY_NAME);
 }
 
 void CVineDecoration::draw(PHLMONITOR, const float& alpha) {
-    if (!config.enabled->value() || !validMapped(m_window))
+    if (!config().enabled->value() || !validMapped(m_window))
         return;
 
     const auto window = m_window.lock();
@@ -75,7 +76,7 @@ void CVineDecoration::draw(PHLMONITOR, const float& alpha) {
 
 void CVineDecoration::drawPass(PHLMONITOR monitor, const float& alpha) {
     const auto window = m_window.lock();
-    if (!window || !monitor || !config.enabled->value())
+    if (!window || !monitor || !config().enabled->value())
         return;
 
     const double extent = configuredExtent();
@@ -96,16 +97,16 @@ void CVineDecoration::drawPass(PHLMONITOR monitor, const float& alpha) {
     static auto borderSize = CConfigValue<Config::INTEGER>("general:border_size");
 
     const int rounding = window->rounding() == 0 ? 0 : static_cast<int>((window->rounding() + *borderSize) * monitor->m_scale);
-    const int thickness = static_cast<int>(config.stemThickness->value());
-    const auto stem      = CHyprColor{static_cast<uint64_t>(config.stemColor->value())};
-    const auto leaf      = withWindowAlpha(CHyprColor{static_cast<uint64_t>(config.leafColor->value())}, alpha);
-    const auto bud       = withWindowAlpha(CHyprColor{static_cast<uint64_t>(config.budColor->value())}, alpha);
+    const int thickness = static_cast<int>(config().stemThickness->value());
+    const auto stem      = CHyprColor{static_cast<uint64_t>(config().stemColor->value())};
+    const auto leaf      = withWindowAlpha(CHyprColor{static_cast<uint64_t>(config().leafColor->value())}, alpha);
+    const auto bud       = withWindowAlpha(CHyprColor{static_cast<uint64_t>(config().budColor->value())}, alpha);
 
     g_pHyprOpenGL->scissor(nullptr);
     g_pHyprOpenGL->renderBorder(borderBox, stem,
                                 {.round = rounding, .roundingPower = window->roundingPower(), .borderSize = thickness, .a = alpha, .outerRound = -1});
 
-    const double longSide  = config.leafSize->value() * monitor->m_scale;
+    const double longSide  = config().leafSize->value() * monitor->m_scale;
     const double shortSide = std::max(4.0, longSide * 0.55);
 
     const std::array<double, 3> horizontalStops = {0.17, 0.50, 0.82};
@@ -157,4 +158,5 @@ void CVineDecoration::updateWindow(PHLWINDOW window) {
 void CVineDecoration::damageEntire() {
     CBox damage = m_lastRelativeBox.copy().translate(m_lastWindowPosition).expand(3);
     g_pHyprRenderer->damageBox(damage);
+}
 }

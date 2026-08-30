@@ -6,7 +6,14 @@ The first native compositor test used the locally installed Hyprland 0.56.2.
 The running compositor and development headers both identified the exact commit
 `efb50993780079460b0cbed1363e2166a2de1d9f` before the plugin was loaded.
 
-![OmaVines rendered around a controlled Foot window](native-foot-test.png)
+The OmaFrames/Vines pack refactor was smoke-tested against the same compositor.
+The renamed plugin registered as `omaframes` version `0.2.0-prototype`, and the
+active window reported `OmaFrames: Vines` at priority 9980. The nested
+`plugin:omaframes:vines:enabled` value toggled false and true through
+`hl.config`, proving the pack namespace is live. Unload removed both the plugin
+and decoration, with no Hyprland config errors before or after cleanup.
+
+![OmaFrames Vines rendered around a controlled Foot window](native-foot-test.png)
 
 ## Passed
 
@@ -17,6 +24,7 @@ The running compositor and development headers both identified the exact commit
 | Required Hyprland plugin exports | Pass |
 | Runtime ABI/hash guard | Pass |
 | Plugin load and registration | Pass |
+| OmaFrames host and Vines pack namespace | Pass |
 | Attachment to a window that existed before load | Pass |
 | Attachment to a Foot window opened after load | Pass |
 | Runtime option registration | Pass |
@@ -39,7 +47,7 @@ The running compositor and development headers both identified the exact commit
 
 The Foot window was captured as a 725×874 logical-pixel region and produced a
 1450×1748 image, confirming correct rendering on the monitor's 2× scale. The
-window's decoration list reported `OmaVines prototype` at priority 9980 while
+window's decoration list reported the Vines decoration at priority 9980 while
 loaded and no longer reported it after unload.
 
 The expanded state test moved a floating Foot window, resized it to 640×480,
@@ -49,7 +57,7 @@ geometry was increased from the defaults `(3, 16, 13)` to `(6, 24, 20)` for
 stem thickness, extent, and leaf size; the decoration repositioned cleanly.
 
 Five Foot windows were then decorated simultaneously. Every client reported
-`OmaVines prototype`, and closing four clients sequentially produced clean
+the Vines decoration, and closing four clients sequentially produced clean
 relayouts. In true fullscreen the outward decoration is clipped beyond the
 screen edge, so no vines remain visible and no corruption appears.
 

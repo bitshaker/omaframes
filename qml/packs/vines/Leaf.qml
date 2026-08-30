@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 
+// OmaFrames Vines pack leaf primitive.
 import QtQuick
 import QtQuick.Shapes
 

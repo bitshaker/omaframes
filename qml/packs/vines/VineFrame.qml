@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 
+// OmaFrames Vines pack perimeter renderer.
 import QtQuick
 import QtQuick.Shapes
 

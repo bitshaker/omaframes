@@ -4,6 +4,7 @@
 
 #include "VineDecoration.hpp"
 
+namespace OmaFrames::Packs::Vines {
 CVinePassElement::CVinePassElement(const SData& data) : m_data(data) {}
 
 std::vector<UP<IPassElement>> CVinePassElement::draw() {
@@ -17,4 +18,5 @@ bool CVinePassElement::needsLiveBlur() {
 
 bool CVinePassElement::needsPrecomputeBlur() {
     return false;
+}
 }
