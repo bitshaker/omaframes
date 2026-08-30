@@ -91,7 +91,7 @@ before installing and save work before enabling a new compositor plugin.
 HyprPM builds the native host locally and may request the privileges needed to
 prepare matching Hyprland headers or system development packages. The Omarchy
 plugin installer only clones and validates the QML checkout; it does not run a
-build hook or use `sudo`.
+build hook or request elevated access.
 
 See [SECURITY.md](SECURITY.md) for the runtime boundary and vulnerability
 reporting guidance.
