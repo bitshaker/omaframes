@@ -133,9 +133,12 @@ For example, enable Railway through the panel or run:
 hyprctl eval 'hl.config({ plugin = { omaframes = { railway = { enabled = true } } } })'
 ```
 
-The new packs pass native compilation, QML lint and offscreen gallery rendering.
-Live compositor testing, mixed-monitor behavior, and a performance soak remain
-unverified for these three packs.
+The new packs pass native compilation, QML lint, offscreen gallery rendering,
+and a live Hyprland 0.56.2 smoke test at 1.6× scale. The live run covered all
+three effects, corrected border alignment, five-pack panel controls, resize,
+fullscreen recovery, workspace transfer, new-window attachment, static-mode
+settings, coexistence, and unload/reload. Mixed-monitor behavior and a performance
+soak remain unverified. See [the live-test report](docs/LIVE_TEST.md).
 
 ## QML visual study
 

@@ -317,3 +317,34 @@ the image.
 After capture, the panel was closed, the native plugin was unloaded, all three
 temporary Foot processes were removed, the original workspace was restored,
 and Hyprland reported no remaining loaded plugins.
+
+
+## Fireflies, Frost and Railway — 2026-10-14
+
+Tested on Hyprland 0.56.2 (`efb50993780079460b0cbed1363e2166a2de1d9f`),
+one 2880×1800 eDP display at 1.6× scale. The bar plugin is linked to this
+checkout and uses the local native build through `pluginPath`; this was not a
+HyprPM installation test. HyprPM's state store is not initialized on this machine.
+
+- `scripts/check` passed after the geometry fix, including QML lint, package
+  validation, native compilation and required exported symbols.
+- Reloaded the shell to replace its cached two-pack widget; all five switches
+  appeared and IPC reported all five states correctly.
+- Visually inspected Fireflies, Frost and Railway on a temporary floating Foot
+  window. The initial sticky decorations accumulated offsets. Switching the
+  accents to absolute positioning and using current window geometry fixed their
+  alignment; render and timer-damage geometry now use the same window bounds.
+- Resized the test window from 850×500 to 720×420 and inspected Railway following
+  the resulting border. Fullscreen entry/recovery and workspace 1 → 9 → 1
+  commands completed without a compositor failure or configuration error.
+- Exercised animation-disabled settings for Railway and Fireflies, restored
+  motion, and attached effects to a second newly opened Foot window.
+- Enabled all five packs together and visually inspected the combined frames
+  and panel state. Unload/rebuild/reload completed successfully.
+- Closed only the two temporary test windows and restored Vines/Chameleon on,
+  new effects off, with their motion settings enabled.
+
+Screenshots were retained locally under `/tmp/omaframes-live/`; they include the
+user's desktop and are not repository assets. No video recorder was used.
+Mixed-monitor testing, a long-running performance soak, frame-pacing measurements,
+and a fresh HyprPM installation remain outstanding.
