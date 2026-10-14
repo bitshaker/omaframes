@@ -6,7 +6,7 @@ commit_pins = [
 ]
 
 [omaframes]
-description = "Living, theme-aware Vines and a window-walking Chameleon for Hyprland"
+description = "Five window effect packs: Vines, Chameleon, Fireflies, Frost and Railway"
 authors = ["Joe Homs"]
 output = "native/omaframes-native.so"
 build = [

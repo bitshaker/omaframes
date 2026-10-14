@@ -12,6 +12,9 @@ fi
     "$project_dir/qml/packs/critter/Critter.qml" \
     "$project_dir/qml/packs/vines/Leaf.qml" \
     "$project_dir/qml/packs/vines/VineFrame.qml" \
+    "$project_dir/qml/packs/accents/AccentFrame.qml" \
+    "$project_dir/qml/AccentStudy.qml" \
+    "$project_dir/qml/AccentCapture.qml" \
     "$project_dir/qml/Study.qml" \
     "$project_dir/qml/Main.qml" \
     "$project_dir/qml/Capture.qml"

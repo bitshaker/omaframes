@@ -5,7 +5,7 @@
   "version": "0.5.0",
   "author": "Joe Homs",
   "license": "MIT",
-  "description": "Living, theme-aware Vines and a window-walking Chameleon for Hyprland, controlled from the Omarchy bar.",
+  "description": "Vines, Chameleon, Fireflies, Frost and Railway window effects, controlled from the Omarchy bar.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "OmaFrames",
-    "description": "Control the OmaFrames native host and toggle Vines or Chameleon.",
+    "description": "Control the native host and toggle all five OmaFrames effect packs.",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right",

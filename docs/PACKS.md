@@ -5,7 +5,8 @@ on purpose and can change while the renderer is experimental.
 
 ## Native pack
 
-Each pack lives under `native/src/packs/<id>/` and owns:
+Packs normally live under `native/src/packs/<id>/`; closely related packs may
+share a renderer directory. Each owns:
 
 - its stable id and user-facing display name;
 - configuration values under `plugin:omaframes:<id>:...`;
@@ -57,3 +58,24 @@ procedural texture cache. Perched drawing follows the host window; airborne
 drawing switches to one compositor-global pass until landing transfers host
 ownership. The matching QML component is a vector behavior study, not the live
 renderer.
+
+## Fireflies, Frost and Railway
+
+These three registry entries share the small `accents/` native renderer and QML
+preview component, selected by a fixed enum. Each has its own config namespace,
+decoration name, duplicate-attachment check and independent enabled/motion state.
+All start disabled. Registry callbacks bind each enum value; shared render-pass
+cleanup is idempotent. Config key strings have static pack-owned storage because
+Hyprland retains their pointers.
+
+Fireflies draws layered translucent lights with stable per-window phases. Frost
+caches four small Cairo corner textures and scales them during a finite growth
+animation. Railway draws rails, sleepers and three independently positioned cars
+around the perimeter. Continuous motion uses one-shot 30 Hz timers rearmed only
+by visible rendering; timer damage is restricted to perimeter strips. Static
+mode and completed frost growth do not rearm timers. Unload removes each timer
+and pending accent render passes.
+
+The standalone `AccentStudy.qml` gallery exercises all three looks and includes
+a motion toggle. `AccentCapture.qml` fixes time for repeatable offscreen capture.
+This preview is a visual study, not evidence of native compositor validation.

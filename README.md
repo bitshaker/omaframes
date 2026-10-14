@@ -104,8 +104,38 @@ reporting guidance.
 Chameleon. Their QML and native sources live under matching `packs/<id>`
 directories and are registered through one small compile-time host registry.
 
-Ideas such as frost, embers, stars, moss, circuits, or seasonal frames can
-become later packs while sharing one compositor integration.
+Three more built-in packs are available in the panel, initially disabled:
+
+- **Fireflies** — twelve softly pulsing lights drift around each window.
+- **Frost** — branching ice crystals grow from the four corners, then settle.
+- **Railway** — twin rails, sleepers, a locomotive and two carriages circle each window.
+
+All three support independent toggles, static motion-free rendering, an accent
+color, and optional inheritance of the resolved window border color. Their
+shared native renderer lives in `native/src/packs/accents/`; the preview component
+lives in `qml/packs/accents/`. Try the animated gallery with
+`./scripts/run-accent-study`, or capture it with
+`./scripts/capture-qml-prototype --accents`.
+
+For each of `fireflies`, `frost`, and `railway`, the runtime settings are:
+
+```text
+plugin:omaframes:<pack>:enabled             # false
+plugin:omaframes:<pack>:animation_enabled   # true; false gives a static frame
+plugin:omaframes:<pack>:theme_aware         # false
+plugin:omaframes:<pack>:col.accent          # warm lime / ice blue / amber
+plugin:omaframes:<pack>:speed               # 44; used by Fireflies and Railway
+```
+
+For example, enable Railway through the panel or run:
+
+```bash
+hyprctl eval 'hl.config({ plugin = { omaframes = { railway = { enabled = true } } } })'
+```
+
+The new packs pass native compilation, QML lint and offscreen gallery rendering.
+Live compositor testing, mixed-monitor behavior, and a performance soak remain
+unverified for these three packs.
 
 ## QML visual study
 

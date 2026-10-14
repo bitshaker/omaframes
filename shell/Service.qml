@@ -10,6 +10,9 @@ Item {
   property bool loaded: false
   property bool vinesEnabled: false
   property bool critterEnabled: false
+  property bool firefliesEnabled: false
+  property bool frostEnabled: false
+  property bool railwayEnabled: false
   property bool refreshing: false
   property string lastError: ""
   property string actionStatus: ""
@@ -20,6 +23,12 @@ Item {
   property string _vinesError: ""
   property string _critterOutput: ""
   property string _critterError: ""
+  property string _firefliesOutput: ""
+  property string _firefliesError: ""
+  property string _frostOutput: ""
+  property string _frostError: ""
+  property string _railwayOutput: ""
+  property string _railwayError: ""
   property string _actionOutput: ""
   property string _actionError: ""
   property string _pendingAction: ""
@@ -27,8 +36,12 @@ Item {
 
   readonly property bool busy: actionProc.running || pluginListProc.running
     || vinesOptionProc.running || critterOptionProc.running
+    || firefliesOptionProc.running || frostOptionProc.running || railwayOptionProc.running
   readonly property int activeCount: (loaded && vinesEnabled ? 1 : 0)
     + (loaded && critterEnabled ? 1 : 0)
+    + (loaded && firefliesEnabled ? 1 : 0)
+    + (loaded && frostEnabled ? 1 : 0)
+    + (loaded && railwayEnabled ? 1 : 0)
   readonly property bool anyActive: activeCount > 0
   readonly property bool managedByHyprpm: pluginPath === ""
   readonly property bool pluginAvailable: managedByHyprpm || pluginPath.charAt(0) === "/"
@@ -98,6 +111,9 @@ Item {
     if (!loaded) {
       vinesEnabled = false
       critterEnabled = false
+      firefliesEnabled = false
+      frostEnabled = false
+      railwayEnabled = false
       refreshing = false
       if (_pendingAction === "") actionStatus = ""
       return
@@ -107,17 +123,31 @@ Item {
     _vinesError = ""
     _critterOutput = ""
     _critterError = ""
+    _firefliesOutput = ""
+    _firefliesError = ""
+    firefliesOptionProc.running = true
+    _frostOutput = ""
+    _frostError = ""
+    frostOptionProc.running = true
+    _railwayOutput = ""
+    _railwayError = ""
+    railwayOptionProc.running = true
     vinesOptionProc.running = true
     critterOptionProc.running = true
   }
 
   function finishOptionRefresh() {
-    if (vinesOptionProc.running || critterOptionProc.running) return
+    if (vinesOptionProc.running || critterOptionProc.running
+        || firefliesOptionProc.running || frostOptionProc.running || railwayOptionProc.running) return
     refreshing = false
     if (_vinesOutput !== "") vinesEnabled = optionEnabled(_vinesOutput)
     if (_critterOutput !== "") critterEnabled = optionEnabled(_critterOutput)
 
-    var error = _vinesError !== "" ? _vinesError : _critterError
+    if (_firefliesOutput !== "") firefliesEnabled = optionEnabled(_firefliesOutput)
+    if (_frostOutput !== "") frostEnabled = optionEnabled(_frostOutput)
+    if (_railwayOutput !== "") railwayEnabled = optionEnabled(_railwayOutput)
+
+    var error = _vinesError || _critterError || _firefliesError || _frostError || _railwayError
     if (error !== "") lastError = friendlyError(error, "Could not read an OmaFrames setting.")
     if (_pendingAction === "") actionStatus = ""
   }
@@ -143,7 +173,7 @@ Item {
 
   function setPack(pack, enabled) {
     if (!loaded || busy) return
-    if (pack !== "vines" && pack !== "critter") return
+    if (["vines", "critter", "fireflies", "frost", "railway"].indexOf(pack) < 0) return
 
     _pendingAction = "set"
     _pendingPack = pack
@@ -151,7 +181,7 @@ Item {
     _actionError = ""
     lastError = ""
     actionStatus = (enabled ? "Enabling " : "Disabling ")
-      + (pack === "vines" ? "Vines…" : "Chameleon…")
+      + packName(pack) + "…"
 
     // Hyprland 0.56 exposes transient plugin values through its Lua config API.
     var lua = "hl.config({ plugin = { omaframes = { " + pack
@@ -160,9 +190,17 @@ Item {
     actionProc.running = true
   }
 
+  function packName(pack) {
+    return ({vines: "Vines", critter: "Chameleon", fireflies: "Fireflies", frost: "Frost", railway: "Railway"})[pack] || pack
+  }
+
   function togglePack(pack) {
     if (pack === "vines") setPack(pack, !vinesEnabled)
     else if (pack === "critter") setPack(pack, !critterEnabled)
+    else if (pack === "fireflies") setPack(pack, !firefliesEnabled)
+    else if (pack === "frost") setPack(pack, !frostEnabled)
+    else if (pack === "railway") setPack(pack, !railwayEnabled)
+
   }
 
   Timer {
@@ -232,6 +270,48 @@ Item {
   }
 
   Process {
+    id: firefliesOptionProc
+    command: ["hyprctl", "-j", "getoption", "plugin:omaframes:fireflies:enabled"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root._firefliesOutput = String(text || "")
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root._firefliesError = String(text || "").trim()
+    }
+    onExited: function(exitCode) { Qt.callLater(root.finishOptionRefresh) }
+  }
+
+  Process {
+    id: frostOptionProc
+    command: ["hyprctl", "-j", "getoption", "plugin:omaframes:frost:enabled"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root._frostOutput = String(text || "")
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root._frostError = String(text || "").trim()
+    }
+    onExited: function(exitCode) { Qt.callLater(root.finishOptionRefresh) }
+  }
+
+  Process {
+    id: railwayOptionProc
+    command: ["hyprctl", "-j", "getoption", "plugin:omaframes:railway:enabled"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root._railwayOutput = String(text || "")
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root._railwayError = String(text || "").trim()
+    }
+    onExited: function(exitCode) { Qt.callLater(root.finishOptionRefresh) }
+  }
+
+  Process {
     id: actionProc
     stdout: StdioCollector {
       waitForEnd: true
@@ -259,7 +339,7 @@ Item {
       } else if (action === "unload") {
         root.actionStatus = "OmaFrames unloaded"
       } else if (action === "set") {
-        root.actionStatus = (pack === "vines" ? "Vines" : "Chameleon") + " updated"
+        root.actionStatus = root.packName(pack) + " updated"
       }
       actionSettleTimer.restart()
     }
