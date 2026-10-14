@@ -81,7 +81,9 @@ plugin registration, attachment to existing/new windows, runtime configuration,
 and a 2× live render. Recorder-free follow-up testing also passed visible
 perimeter walking, deterministic jumps, closing a destination mid-flight,
 floating resize, empty-workspace and fullscreen recovery, reduced motion,
-runtime disable/re-enable, a 12-jump soak, and clean unload. Mixed-monitor and
+runtime disable/re-enable, a 12-jump soak, and clean unload. Chameleon respects
+monitor space reserved for bars, moving inside window edges when needed and
+keeping jumps below those reserved areas. Mixed-monitor and
 long-running performance tests remain. The separate AMD encoder incident is
 documented in [the incident report](docs/INCIDENT_2026-08-30.md).
 
@@ -143,6 +145,11 @@ Build it:
 ```bash
 make -C native
 ```
+
+After an Omarchy update, run `make -C native` again when using a development
+`pluginPath`. The build detects changes to the installed Hyprland library
+versions. For HyprPM-managed installs, use `hyprpm update` instead. The toolbar
+keeps load failures visible and reports when a native rebuild is needed.
 
 The output is `native/omaframes-native.so`. It checks the running Hyprland hash
 during initialization and refuses to load against mismatched headers.

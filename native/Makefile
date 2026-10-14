@@ -18,12 +18,20 @@ TARGET = omaframes-native.so
 HYPRLAND_CFLAGS = $(shell pkg-config --cflags pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon)
 HYPRLAND_LIBS = $(shell pkg-config --libs pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon)
 
-.PHONY: all clean
+.PHONY: all clean FORCE
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCES) $(HEADERS)
+# Library/header updates must invalidate a previously built development host.
+.build-environment: FORCE
+	@{ pkg-config --modversion hyprland aquamarine hyprutils hyprgraphics hyprcursor hyprlang; \
+	    printf '%s\n' '$(CXX) $(CXXFLAGS) $(LDFLAGS) $(EXTRA_FLAGS)' '$(HYPRLAND_CFLAGS)' '$(HYPRLAND_LIBS)'; } > $@.tmp
+	@cmp -s $@.tmp $@ && rm -f $@.tmp || mv -f $@.tmp $@
+
+FORCE:
+
+$(TARGET): $(SOURCES) $(HEADERS) .build-environment
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(EXTRA_FLAGS) $(HYPRLAND_CFLAGS) $(SOURCES) $(HYPRLAND_LIBS) -o $@
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET) .build-environment .build-environment.tmp

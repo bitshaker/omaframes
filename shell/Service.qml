@@ -45,6 +45,12 @@ Item {
     if (text.indexOf("Couldn't set socket timeout") >= 0)
       return "Hyprland is not reachable from the shell."
     var lower = text.toLowerCase()
+    if (lower.indexOf("cannot open shared object file") >= 0
+        || lower.indexOf("undefined symbol") >= 0
+        || lower.indexOf("version mismatch") >= 0)
+      return text + (managedByHyprpm
+        ? " Rebuild the native host with: hyprpm update"
+        : " Rebuild the development native host against the installed Hyprland libraries.")
     if (lower.indexOf("omaframes") >= 0
         && (lower.indexOf("not found") >= 0 || lower.indexOf("doesn't exist") >= 0))
       return "The native host is not installed. Run: hyprpm add https://github.com/bitshaker/omaframes"
@@ -56,7 +62,7 @@ Item {
       var value = JSON.parse(String(raw || "{}"))
       if (value.bool !== undefined) return value.bool === true
       if (value.int !== undefined) return Number(value.int) !== 0
-      if (value.value !== undefined) return value.value === true || Number(value.value) !== 0
+      if (value.value !== undefined) return value.value === true || (Number.isFinite(Number(value.value)) && Number(value.value) !== 0)
     } catch (e) {}
     return false
   }
@@ -94,7 +100,6 @@ Item {
       critterEnabled = false
       refreshing = false
       if (_pendingAction === "") actionStatus = ""
-      lastError = ""
       return
     }
 
@@ -113,12 +118,12 @@ Item {
     if (_critterOutput !== "") critterEnabled = optionEnabled(_critterOutput)
 
     var error = _vinesError !== "" ? _vinesError : _critterError
-    lastError = error === "" ? "" : friendlyError(error, "Could not read an OmaFrames setting.")
+    if (error !== "") lastError = friendlyError(error, "Could not read an OmaFrames setting.")
     if (_pendingAction === "") actionStatus = ""
   }
 
   function toggleHost() {
-    if (actionProc.running) return
+    if (busy) return
     if (!managedByHyprpm && pluginPath.charAt(0) !== "/") {
       lastError = "Set an absolute path to omaframes-native.so in the widget settings."
       return
@@ -137,7 +142,7 @@ Item {
   }
 
   function setPack(pack, enabled) {
-    if (!loaded || actionProc.running) return
+    if (!loaded || busy) return
     if (pack !== "vines" && pack !== "critter") return
 
     _pendingAction = "set"
@@ -242,7 +247,10 @@ Item {
       root._pendingAction = ""
       root._pendingPack = ""
 
-      if (exitCode !== 0 || root._actionError !== "") {
+      // hyprctl can return exit code 0 with a failure message on stdout.
+      var outputFailure = !root.managedByHyprpm && action !== "set"
+        && root._actionOutput.toLowerCase() !== "ok"
+      if (exitCode !== 0 || outputFailure) {
         root.lastError = root.friendlyError(root._actionError || root._actionOutput,
                                             "The OmaFrames action failed.")
         root.actionStatus = ""

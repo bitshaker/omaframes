@@ -3,3 +3,5 @@
 build/
 captures/
 .qmlls.ini
+
+native/.build-environment*

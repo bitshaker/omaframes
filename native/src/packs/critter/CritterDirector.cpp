@@ -552,7 +552,11 @@ CBox CCritterDirector::monitorBox(PHLWINDOW window) const {
     const auto monitor = window->m_monitor.lock();
     if (!monitor)
         return {};
-    return {monitor->m_position.x, monitor->m_position.y, monitor->m_size.x, monitor->m_size.y};
+    // Layer-shell bars occupy reserved space above window decorations. Use
+    // the work area for both rail clearance and flight clamping so the actor
+    // cannot walk or jump behind a bar on any monitor edge.
+    return monitor->m_reservedArea.apply(
+        CBox{monitor->m_position.x, monitor->m_position.y, monitor->m_size.x, monitor->m_size.y});
 }
 
 bool CCritterDirector::tiledActiveWindowOccludes(PHLWINDOW host, const CBox& outwardActorBox) const {
@@ -634,7 +638,7 @@ CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, const
     const Vector2D outwardCenter = point.contact + outwardNormal * offset;
     const CBox     outwardActorBox{outwardCenter.x - size / 2.0, outwardCenter.y - size / 2.0, size, size};
 
-    // Output clipping takes precedence. At internal rails, only the active
+    // Work-area clipping (including reserved bars) takes precedence. At internal rails, only the active
     // tiled window's animated box can turn the actor inward; the exact actor
     // box keeps unrelated portions of broadly adjacent windows out of it.
     if (bounds.width > 0 && bounds.height > 0 && outwardClearance < required)
@@ -654,7 +658,7 @@ CCritterDirector::SRailPoint CCritterDirector::railPoint(PHLWINDOW window, const
     point.inward = factor <= 0.0;
     point.center = point.contact + outwardNormal * (offset * factor);
 
-    // Keep even the transparent texture box inside the output. The correction
+    // Keep even the transparent texture box inside the work area. The correction
     // is only a few logical pixels after the rail has flipped inward, and it
     // prevents pose extremities from being clipped on truly flush windows.
     point.center = clampActorCenter(point.center, bounds, size);
