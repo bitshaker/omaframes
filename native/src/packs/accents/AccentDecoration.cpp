@@ -14,7 +14,10 @@ namespace OmaFrames::Packs::Accents {
 namespace {
 constexpr uint8_t ALL_EDGES = DECORATION_EDGE_BOTTOM | DECORATION_EDGE_LEFT | DECORATION_EDGE_RIGHT | DECORATION_EDGE_TOP;
 constexpr const char *names[] = {"Fireflies", "Frost", "Railway"};
-constexpr auto FRAME = std::chrono::milliseconds(33);
+// Request damage just after the current render, then let the compositor's
+// output scheduling pace the next frame. Waiting 33 ms *after* rendering adds
+// another vblank wait and produces uneven, visibly low animation cadence.
+constexpr auto NEXT_FRAME_REQUEST = std::chrono::milliseconds(1);
 } // namespace
 CAccentDecoration::CAccentDecoration(PHLWINDOW window, Kind kind)
     : IHyprWindowDecoration(window), m_kind(kind), m_window(window), m_growthStartedAt(std::chrono::steady_clock::now()) {
@@ -134,7 +137,7 @@ void CAccentDecoration::drawPass(PHLMONITOR monitor, const float &alpha) {
         const double seed = static_cast<double>(reinterpret_cast<uintptr_t>(window.get()) % 997) / 997;
         for (int i = 0; i < 12; ++i) {
             const double phase = i * 2.399 + seed * 6.28;
-            const double distance = perimeter * (i + seed) / 12 + time * cfg.speed->value() * scale * 0.12;
+            const double distance = perimeter * (i + seed) / 12 + time * cfg.speed->value() * scale;
             auto pos = point(distance);
             // Keep flight inside the advertised decoration extents.
             pos.x += std::sin(time * 0.7 + phase) * 6 * scale;
@@ -253,7 +256,7 @@ void CAccentDecoration::drawPass(PHLMONITOR monitor, const float &alpha) {
     // A one-shot timer is rearmed only by a visible rendered window. Hidden
     // workspaces and reduced-motion mode therefore have no continuous timer.
     if (motion && (m_kind != Kind::Frost || time < 1.6) && m_animationTimer)
-        m_animationTimer->updateTimeout(FRAME);
+        m_animationTimer->updateTimeout(NEXT_FRAME_REQUEST);
 }
 eDecorationType CAccentDecoration::getDecorationType() { return DECORATION_CUSTOM; }
 

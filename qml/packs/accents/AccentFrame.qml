@@ -6,7 +6,7 @@ Canvas {
     property color accent: pack === "fireflies" ? "#d9f576" : pack === "frost" ? "#9ddfff" : "#e8a45b"
     property bool motionEnabled: true
     property real elapsed: 0
-    property real speed: 44
+    property real speed: pack === "fireflies" ? 24 : 44
     property real growth: 1
     property real inset: 20
     onElapsedChanged: requestPaint()
@@ -44,7 +44,7 @@ Canvas {
         if (pack === "fireflies") {
             for (let i=0; i<12; ++i) {
                 const phase = i*2.399
-                const pos = point(perimeter*(i+0.3)/12+t*speed*0.12)
+                const pos = point(perimeter*(i+0.3)/12+t*speed)
                 const px=pos.x+Math.sin(t*0.7+phase)*6, py=pos.y+Math.cos(t*0.9+phase)*6
                 const glow=motionEnabled ? 0.45+0.55*Math.pow(0.5+0.5*Math.sin(t*1.5+phase),2):0.8
                 for(let radius=7; radius>=2; --radius) dot(px,py,radius,accent,glow*0.035)

@@ -71,8 +71,9 @@ Hyprland retains their pointers.
 Fireflies draws layered translucent lights with stable per-window phases. Frost
 caches four small Cairo corner textures and scales them during a finite growth
 animation. Railway draws rails, sleepers and three independently positioned cars
-around the perimeter. Continuous motion uses one-shot 30 Hz timers rearmed only
-by visible rendering; timer damage is restricted to perimeter strips. Static
+around the perimeter. Continuous motion requests the next damaged frame through
+a one-shot timer just after visible rendering, leaving refresh pacing to the
+compositor; timer damage is restricted to perimeter strips. Static
 mode and completed frost growth do not rearm timers. Unload removes each timer
 and pending accent render passes.
 

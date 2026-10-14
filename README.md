@@ -124,7 +124,7 @@ plugin:omaframes:<pack>:enabled             # false
 plugin:omaframes:<pack>:animation_enabled   # true; false gives a static frame
 plugin:omaframes:<pack>:theme_aware         # false
 plugin:omaframes:<pack>:col.accent          # warm lime / ice blue / amber
-plugin:omaframes:<pack>:speed               # 44; used by Fireflies and Railway
+plugin:omaframes:<pack>:speed               # Fireflies: 24; Railway: 44; unused by Frost
 ```
 
 For example, enable Railway through the panel or run:

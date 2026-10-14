@@ -22,7 +22,7 @@ void registerConfig(Kind kind) {
     c.enabled = makeShared<Config::Values::CBoolValue>(keys[0].c_str(), "Enable this effect pack", false);
     c.animationEnabled = makeShared<Config::Values::CBoolValue>(keys[1].c_str(), "Animate this effect; disable for a static frame", true);
     c.themeAware = makeShared<Config::Values::CBoolValue>(keys[2].c_str(), "Inherit the resolved window border color", false);
-    c.speed = makeShared<Config::Values::CIntValue>(keys[3].c_str(), "Movement speed in logical pixels per second", 44,
+    c.speed = makeShared<Config::Values::CIntValue>(keys[3].c_str(), "Movement speed in logical pixels per second", kind == Kind::Fireflies ? 24 : 44,
                                                     Config::Values::SIntValueOptions{.min = 5, .max = 150});
     const uint64_t colors[] = {0xffd9f576, 0xff9ddfff, 0xffe8a45b};
     c.color = makeShared<Config::Values::CColorValue>(keys[4].c_str(), "Effect accent color", colors[static_cast<int>(kind)]);
