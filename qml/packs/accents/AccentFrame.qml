@@ -7,6 +7,7 @@ Canvas {
     property bool motionEnabled: true
     property real elapsed: 0
     property real speed: pack === "fireflies" ? 24 : 44
+    property real seed: 0.3
     property real growth: 1
     property real inset: 20
     onElapsedChanged: requestPaint()
@@ -43,10 +44,18 @@ Canvas {
         }
         if (pack === "fireflies") {
             for (let i=0; i<12; ++i) {
-                const phase = i*2.399
-                const pos = point(perimeter*(i+0.3)/12+t*speed)
-                const px=pos.x+Math.sin(t*0.7+phase)*6, py=pos.y+Math.cos(t*0.9+phase)*6
-                const glow=motionEnabled ? 0.45+0.55*Math.pow(0.5+0.5*Math.sin(t*1.5+phase),2):0.8
+                function random(salt) {
+                    const value=Math.sin((i+1)*127.1+seed*311.7+salt*74.7)*43758.5453
+                    return value-Math.floor(value)
+                }
+                const phase=random(1)*Math.PI*2, phase2=random(2)*Math.PI*2
+                const direction=random(3)<0.5?-1:1, pace=0.55+random(4)*0.9
+                const wander=18*Math.sin(t*0.35+phase)+8*Math.sin(t*0.83+phase2)
+                const pos=point(perimeter*(i+0.15+random(5)*0.7)/12+direction*(t*speed*pace+wander))
+                const px=pos.x+6*Math.sin(t*(0.5+random(6))+phase)+3*Math.sin(t*1.37+phase2)
+                const py=pos.y+6*Math.sin(t*(0.45+random(7))+phase2)+3*Math.cos(t*1.13+phase)
+                const pulse=0.5+0.5*Math.sin(t*(0.9+random(8)*1.5)+phase+0.6*Math.sin(t*0.37+phase2))
+                const glow=motionEnabled?0.12+0.88*pulse*pulse:0.8
                 for(let radius=7; radius>=2; --radius) dot(px,py,radius,accent,glow*0.035)
                 dot(px,py,1.3,"#e6f7ff",glow)
             }

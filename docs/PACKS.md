@@ -68,7 +68,10 @@ All start disabled. Registry callbacks bind each enum value; shared render-pass
 cleanup is idempotent. Config key strings have static pack-owned storage because
 Hyprland retains their pointers.
 
-Fireflies draws layered translucent lights with stable per-window phases. Frost
+Fireflies gives each layered light stable seeded traits: direction, pace,
+spacing, mixed-frequency wandering, and independent blink timing. Negative
+perimeter travel wraps correctly, and drift plus glow stays inside the advertised
+decoration extent. Frost
 caches four small Cairo corner textures and scales them during a finite growth
 animation. Railway draws rails, sleepers and three independently positioned cars
 around the perimeter. Continuous motion requests the next damaged frame through

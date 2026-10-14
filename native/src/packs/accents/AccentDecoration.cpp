@@ -121,7 +121,9 @@ void CAccentDecoration::drawPass(PHLMONITOR monitor, const float &alpha) {
     };
     const double w = box.width, h = box.height, perimeter = 2 * (w + h);
     const auto point = [&](double distance) -> Vector2D {
-        double d = std::fmod(distance + perimeter * 10, perimeter);
+        double d = std::fmod(distance, perimeter);
+        if (d < 0)
+            d += perimeter;
         if (d < w)
             return {box.x + d, box.y};
         d -= w;
@@ -136,13 +138,25 @@ void CAccentDecoration::drawPass(PHLMONITOR monitor, const float &alpha) {
     if (m_kind == Kind::Fireflies) {
         const double seed = static_cast<double>(reinterpret_cast<uintptr_t>(window.get()) % 997) / 997;
         for (int i = 0; i < 12; ++i) {
-            const double phase = i * 2.399 + seed * 6.28;
-            const double distance = perimeter * (i + seed) / 12 + time * cfg.speed->value() * scale;
+            // Stable per-insect traits, sampled independently of render cadence.
+            // Smooth mixed frequencies give wandering and hesitations without
+            // frame-to-frame random jumps or a shared marching rhythm.
+            const auto random = [&](double salt) {
+                const double value = std::sin((i + 1) * 127.1 + seed * 311.7 + salt * 74.7) * 43758.5453;
+                return value - std::floor(value);
+            };
+            const double phase = random(1) * 6.28318530718;
+            const double phase2 = random(2) * 6.28318530718;
+            const double direction = random(3) < 0.5 ? -1.0 : 1.0;
+            const double pace = 0.55 + random(4) * 0.9;
+            const double wander = 18 * std::sin(time * 0.35 + phase) + 8 * std::sin(time * 0.83 + phase2);
+            const double distance = perimeter * (i + 0.15 + random(5) * 0.7) / 12 + direction * (time * cfg.speed->value() * pace + wander) * scale;
             auto pos = point(distance);
-            // Keep flight inside the advertised decoration extents.
-            pos.x += std::sin(time * 0.7 + phase) * 6 * scale;
-            pos.y += std::cos(time * 0.9 + phase) * 6 * scale;
-            const double glow = motion ? 0.45 + 0.55 * std::pow(0.5 + 0.5 * std::sin(time * 1.5 + phase), 2) : 0.8;
+            // Drift plus glow stays within the advertised 18-pixel extent.
+            pos.x += (6 * std::sin(time * (0.5 + random(6)) + phase) + 3 * std::sin(time * 1.37 + phase2)) * scale;
+            pos.y += (6 * std::sin(time * (0.45 + random(7)) + phase2) + 3 * std::cos(time * 1.13 + phase)) * scale;
+            const double pulse = 0.5 + 0.5 * std::sin(time * (0.9 + random(8) * 1.5) + phase + 0.6 * std::sin(time * 0.37 + phase2));
+            const double glow = motion ? 0.12 + 0.88 * pulse * pulse : 0.8;
             for (int radius = 7; radius >= 2; --radius)
                 rect(pos.x - radius * scale, pos.y - radius * scale, 2 * radius * scale, 2 * radius * scale, color, glow * 0.035, true);
             rect(pos.x - 1.3 * scale, pos.y - 1.3 * scale, 2.6 * scale, 2.6 * scale, white, glow, true);
