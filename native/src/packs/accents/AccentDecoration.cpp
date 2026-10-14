@@ -40,12 +40,11 @@ void CAccentDecoration::onAnimationTimer(SP<CEventLoopTimer>) {
     if (!window->m_workspace || (!window->m_pinned && !window->m_workspace->isVisible()))
         return;
     // Animate only the narrow perimeter, without repainting window contents.
-    CBox box = m_assignedGeometry;
-    box.translate(g_pDecorationPositioner->getEdgeDefinedPoint(ALL_EDGES, window));
-    box.translate(window->m_floatingOffset);
+    const auto position = window->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT) + window->m_floatingOffset;
+    const auto size = window->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+    CBox box{position.x, position.y, size.x, size.y};
     if (!window->m_pinned)
         box.translate(window->m_workspace->m_renderOffset->value());
-    box.expand(-18);
     if (box.width < 1 || box.height < 1)
         return;
     constexpr double margin = 18;
@@ -58,7 +57,7 @@ SDecorationPositioningInfo CAccentDecoration::getPositioningInfo() {
     const double extent = 18.0;
 
     SDecorationPositioningInfo info;
-    info.policy = DECORATION_POSITION_STICKY;
+    info.policy = DECORATION_POSITION_ABSOLUTE;
     info.reserved = false;
     info.priority = 9980;
     info.edges = ALL_EDGES;
@@ -101,10 +100,10 @@ void CAccentDecoration::drawPass(PHLMONITOR monitor, const float &alpha) {
         return;
     const auto workspace = window->m_workspace;
     const auto offset = workspace && !window->m_pinned ? workspace->m_renderOffset->value() : Vector2D();
-    CBox box = m_assignedGeometry;
-    box.translate(g_pDecorationPositioner->getEdgeDefinedPoint(ALL_EDGES, window));
-    box.translate(window->m_floatingOffset - monitor->m_position + offset);
-    box.expand(-18).scale(monitor->m_scale).round();
+    const auto position = window->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT) + window->m_floatingOffset;
+    const auto size = window->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+    CBox box{position.x, position.y, size.x, size.y};
+    box.translate(offset - monitor->m_position).scale(monitor->m_scale).round();
     if (box.width < 2 || box.height < 2)
         return;
     const double scale = monitor->m_scale;
