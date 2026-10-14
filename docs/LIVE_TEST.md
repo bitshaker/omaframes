@@ -348,3 +348,25 @@ Screenshots were retained locally under `/tmp/omaframes-live/`; they include the
 user's desktop and are not repository assets. No video recorder was used.
 Mixed-monitor testing, a long-running performance soak, frame-pacing measurements,
 and a fresh HyprPM installation remain outstanding.
+
+
+### Animation pacing follow-up — 2026-10-14
+
+A user reported slow Fireflies and jittery Railway motion. Fireflies had applied
+an undocumented 0.12 multiplier to its speed setting: the default of 44 moved
+only 5.28 logical pixels per second. It now uses the configured speed directly,
+with a default of 24; the QML preview uses the same units and default.
+
+The native renderer had waited 33 ms after drawing before requesting another
+frame, adding output scheduling latency to that interval. It now requests
+perimeter damage 1 ms after rendering so the compositor can schedule the next
+refresh. The timer remains one-shot and is only rearmed by visible rendering;
+static mode and finished frost growth remain idle.
+
+`scripts/check` passed. The rebuilt plugin loaded on the same 60 Hz / 1.6×
+display; the Fireflies default reported 24. Enabled Fireflies and Railway on a
+temporary floating Foot window, exercised motion off/on, and closed the test
+window without a compositor failure or configuration error. Both effects were
+left enabled for the user to assess; Vines and Chameleon were temporarily off.
+No numerical frame-pacing measurement or video capture was performed. Visual
+smoothness still requires user confirmation.
