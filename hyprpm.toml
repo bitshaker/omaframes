@@ -2,7 +2,7 @@
 name = "omaframes"
 authors = ["Joe Homs"]
 commit_pins = [
-    ["efb50993780079460b0cbed1363e2166a2de1d9f", "5028affa9ea80955fb0343acc89ee34f60a20ec9"], # Hyprland 0.56.2
+    ["efb50993780079460b0cbed1363e2166a2de1d9f", "469bd9ef247851f750e7f222272fcb7a1f9f5ad8"], # Hyprland 0.56.2
 ]
 
 [omaframes]

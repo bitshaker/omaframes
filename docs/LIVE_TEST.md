@@ -370,3 +370,17 @@ window without a compositor failure or configuration error. Both effects were
 left enabled for the user to assess; Vines and Chameleon were temporarily off.
 No numerical frame-pacing measurement or video capture was performed. Visual
 smoothness still requires user confirmation.
+
+
+### Independent Fireflies follow-up — 2026-10-14
+
+Each firefly now has seeded direction, speed variation, jittered initial spacing,
+smooth mixed-frequency wandering, and an independent modulated blink rhythm.
+Traits remain stable for the lifetime of a window; no random positions are
+sampled per frame. Negative perimeter movement wraps to positive perimeter
+coordinates. Maximum positional drift is nine logical pixels per axis, plus a
+seven-pixel glow, within the eighteen-pixel decoration extent.
+
+`scripts/check` and the offscreen accent-gallery capture passed. Reloaded the
+native build without a configuration error and restored the user's Fireflies-only
+selection. Individual pacing and blink appearance remain subject to user review.
